@@ -1,0 +1,54 @@
+[
+  {
+    "id": "bac676f3-c13b-44b5-8c06-35445f7c04f6",
+    "trackingId": "GUN-50ISM",
+    "title": "Road pothole on Main Street",
+    "category": "infrastructure",
+    "description": "There is a large pothole on Main Street near the market that is causing accidents.",
+    "contactEmail": "citizen@example.com",
+    "status": "new",
+    "createdAt": "2026-04-09T04:41:09.200Z",
+    "updatedAt": "2026-04-09T04:41:09.200Z",
+    "publicResponse": null,
+    "internalNotes": null
+  },
+  {
+    "id": "f351494e-9b10-4f22-bb0b-cb76f3537f9f",
+    "trackingId": "GUN-XSKPK",
+    "title": "Road pothole on Main Street",
+    "category": "infrastructure",
+    "description": "There is a large pothole on Main Street near the market that is causing accidents.",
+    "contactEmail": "citizen@example.com",
+    "status": "in_review",
+    "createdAt": "2026-04-09T04:42:47.230Z",
+    "updatedAt": "2026-04-09T04:44:20.513Z",
+    "publicResponse": "Thank you for reporting this. Our team has logged it and will coordinate with the Roads Department within the week.",
+    "internalNotes": null
+  },
+  {
+    "id": "e310728d-8cce-4371-9779-5276f2ff45d0",
+    "trackingId": "GUN-PY6C6",
+    "title": "School needs new textbooks",
+    "category": "education",
+    "description": "Students at Narayansthan Primary are studying from 10-year old textbooks.",
+    "contactEmail": null,
+    "status": "new",
+    "createdAt": "2026-04-09T04:42:47.241Z",
+    "updatedAt": "2026-04-09T04:42:47.241Z",
+    "publicResponse": null,
+    "internalNotes": null
+  },
+  {
+    "id": "4999d0cc-ce82-4b9c-aa2d-bede72e1e4a7",
+    "trackingId": "GUN-07D3C",
+    "title": "Water supply disruption",
+    "category": "infrastructure",
+    "description": "Our ward has had no piped water for 3 weeks.",
+    "contactEmail": null,
+    "status": "new",
+    "createdAt": "2026-04-09T04:42:47.250Z",
+    "updatedAt": "2026-04-09T04:42:47.250Z",
+    "publicResponse": null,
+    "internalNotes": null
+  }
+]

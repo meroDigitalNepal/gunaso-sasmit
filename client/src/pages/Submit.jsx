@@ -14,9 +14,16 @@ export default function Submit() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   function handleChange(e) {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  }
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(result.trackingId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   async function handleSubmit(e) {
@@ -48,9 +55,68 @@ export default function Submit() {
             marginBottom: '24px',
           }}>
             <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', marginBottom: '4px' }}>Tracking ID</p>
-            <p style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '2px', color: 'var(--color-accent)' }}>
-              {result.trackingId}
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+              <p style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '1px', color: 'var(--color-accent)', margin: 0 }}>
+                {result.trackingId}
+              </p>
+              <div style={{ position: 'relative', display: 'inline-flex' }}>
+                {copied && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 'calc(100% + 6px)',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: 'var(--color-text-primary)',
+                    color: '#fff',
+                    fontSize: '0.75rem',
+                    fontWeight: 500,
+                    padding: '4px 8px',
+                    borderRadius: '6px',
+                    whiteSpace: 'nowrap',
+                    pointerEvents: 'none',
+                  }}>
+                    Copied
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      borderWidth: '4px',
+                      borderStyle: 'solid',
+                      borderColor: 'var(--color-text-primary) transparent transparent transparent',
+                    }} />
+                  </div>
+                )}
+                <button
+                  onClick={handleCopy}
+                  title="Copy tracking ID"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: copied ? '#e6f4ea' : 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-sm)',
+                    width: '32px',
+                    height: '32px',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    transition: 'background 0.15s',
+                  }}
+                >
+                  {copied ? (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M3 8.5L6.5 12L13 5" stroke="#1d7a3b" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="-1 -1 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <rect x="5.5" y="5.5" width="8" height="9" rx="1.5" stroke="var(--color-text-secondary)" strokeWidth="1.25"/>
+                      <path d="M5.5 10H4a1.5 1.5 0 0 1-1.5-1.5v-7A1.5 1.5 0 0 1 4 0h7a1.5 1.5 0 0 1 1.5 1.5V3" stroke="var(--color-text-secondary)" strokeWidth="1.25" strokeLinecap="round"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <a href={`/track/${result.trackingId}`} className="btn btn-primary">Track this request</a>

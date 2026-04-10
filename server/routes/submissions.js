@@ -7,15 +7,6 @@ const router = express.Router();
 const CATEGORIES = ['infrastructure', 'health', 'education', 'security', 'other'];
 const STATUSES = ['new', 'in_review', 'resolved'];
 
-function generateTrackingId() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = 'GUN-';
-  for (let i = 0; i < 5; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
-
 // POST /api/submissions — create new submission
 router.post('/', async (req, res) => {
   const { title, category, description, contactEmail } = req.body;
@@ -30,7 +21,7 @@ router.post('/', async (req, res) => {
   const now = new Date().toISOString();
   const submission = {
     id: uuidv4(),
-    trackingId: generateTrackingId(),
+    trackingId: uuidv4(),
     title,
     category,
     description,

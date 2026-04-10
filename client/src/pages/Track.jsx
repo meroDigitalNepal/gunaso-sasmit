@@ -73,7 +73,7 @@ export default function Track() {
       <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '10px', marginBottom: '40px' }}>
         <input
           type="text" value={input} onChange={e => setInput(e.target.value)}
-          placeholder="GUN-XXXXX"
+          placeholder="Your tracking number here..."
           style={{
             flex: 1, padding: '10px 14px', border: '1px solid var(--color-border)',
             borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-sans)', fontSize: '0.9375rem',

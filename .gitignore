@@ -8,3 +8,5 @@ dist/
 client/dist/
 client/node_modules/
 server/node_modules/
+server/.env
+client/.env

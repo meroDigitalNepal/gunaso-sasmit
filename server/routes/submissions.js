@@ -17,7 +17,7 @@ function generateTrackingId() {
 }
 
 // POST /api/submissions — create new submission
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { title, category, description, contactEmail } = req.body;
 
   if (!title || !category || !description) {
@@ -42,39 +42,54 @@ router.post('/', (req, res) => {
     internalNotes: null,
   };
 
-  store.create(submission);
-  res.status(201).json(submission);
+  try {
+    const created = await store.create(submission);
+    res.status(201).json(created);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // GET /api/submissions — list all (dashboard)
-router.get('/', (req, res) => {
-  let submissions = store.getAll();
-  const { status, category } = req.query;
-  if (status) submissions = submissions.filter(s => s.status === status);
-  if (category) submissions = submissions.filter(s => s.category === category);
-  // newest first
-  submissions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  res.json(submissions);
+router.get('/', async (req, res) => {
+  try {
+    const { status, category } = req.query;
+    const filters = {};
+    if (status) filters.status = status;
+    if (category) filters.category = category;
+    const submissions = await store.getAll(filters);
+    res.json(submissions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // GET /api/submissions/track/:trackingId — citizen lookup (must be before /:id)
-router.get('/track/:trackingId', (req, res) => {
-  const submission = store.getByTrackingId(req.params.trackingId.toUpperCase());
-  if (!submission) return res.status(404).json({ error: 'Submission not found' });
-  // Return only citizen-visible fields
-  const { id, trackingId, title, category, description, status, createdAt, updatedAt, publicResponse } = submission;
-  res.json({ id, trackingId, title, category, description, status, createdAt, updatedAt, publicResponse });
+router.get('/track/:trackingId', async (req, res) => {
+  try {
+    const submission = await store.getByTrackingId(req.params.trackingId.toUpperCase());
+    if (!submission) return res.status(404).json({ error: 'Submission not found' });
+    // Return only citizen-visible fields
+    const { id, trackingId, title, category, description, status, createdAt, updatedAt, publicResponse } = submission;
+    res.json({ id, trackingId, title, category, description, status, createdAt, updatedAt, publicResponse });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // GET /api/submissions/:id — get single submission (dashboard)
-router.get('/:id', (req, res) => {
-  const submission = store.getById(req.params.id);
-  if (!submission) return res.status(404).json({ error: 'Submission not found' });
-  res.json(submission);
+router.get('/:id', async (req, res) => {
+  try {
+    const submission = await store.getById(req.params.id);
+    if (!submission) return res.status(404).json({ error: 'Submission not found' });
+    res.json(submission);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // PATCH /api/submissions/:id — update status / add response
-router.patch('/:id', (req, res) => {
+router.patch('/:id', async (req, res) => {
   const { status, publicResponse, internalNotes } = req.body;
   if (status && !STATUSES.includes(status)) {
     return res.status(400).json({ error: `status must be one of: ${STATUSES.join(', ')}` });
@@ -84,9 +99,13 @@ router.patch('/:id', (req, res) => {
   if (publicResponse !== undefined) updates.publicResponse = publicResponse;
   if (internalNotes !== undefined) updates.internalNotes = internalNotes;
 
-  const updated = store.update(req.params.id, updates);
-  if (!updated) return res.status(404).json({ error: 'Submission not found' });
-  res.json(updated);
+  try {
+    const updated = await store.update(req.params.id, updates);
+    if (!updated) return res.status(404).json({ error: 'Submission not found' });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

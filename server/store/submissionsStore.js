@@ -1,48 +1,74 @@
-const fs = require('fs');
-const path = require('path');
+const { supabase } = require('../utils/supabase');
+const { toDb, fromDb } = require('../utils/caseConvert');
 
-const DATA_FILE = path.join(__dirname, '../data/submissions.json');
+// PostgREST error code for zero rows returned by .single()
+const NOT_FOUND = 'PGRST116';
 
-function readAll() {
-  if (!fs.existsSync(DATA_FILE)) return [];
-  try {
-    return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-  } catch {
-    return [];
+async function getAll(filters = {}) {
+  let query = supabase
+    .from('submissions')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (filters.status)   query = query.eq('status', filters.status);
+  if (filters.category) query = query.eq('category', filters.category);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data.map(fromDb);
+}
+
+async function getById(id) {
+  const { data, error } = await supabase
+    .from('submissions')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error) {
+    if (error.code === NOT_FOUND) return null;
+    throw error;
   }
+  return fromDb(data);
 }
 
-function writeAll(submissions) {
-  fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-  fs.writeFileSync(DATA_FILE, JSON.stringify(submissions, null, 2), 'utf8');
+async function getByTrackingId(trackingId) {
+  const { data, error } = await supabase
+    .from('submissions')
+    .select('*')
+    .eq('tracking_id', trackingId)
+    .single();
+  if (error) {
+    if (error.code === NOT_FOUND) return null;
+    throw error;
+  }
+  return fromDb(data);
 }
 
-function getAll() {
-  return readAll();
+async function create(submission) {
+  const { data, error } = await supabase
+    .from('submissions')
+    .insert(toDb(submission))
+    .select()
+    .single();
+  if (error) throw error;
+  return fromDb(data);
 }
 
-function getById(id) {
-  return readAll().find(s => s.id === id) || null;
-}
-
-function getByTrackingId(trackingId) {
-  return readAll().find(s => s.trackingId === trackingId) || null;
-}
-
-function create(submission) {
-  const submissions = readAll();
-  submissions.push(submission);
-  writeAll(submissions);
-  return submission;
-}
-
-function update(id, updates) {
-  const submissions = readAll();
-  const idx = submissions.findIndex(s => s.id === id);
-  if (idx === -1) return null;
-  submissions[idx] = { ...submissions[idx], ...updates, updatedAt: new Date().toISOString() };
-  writeAll(submissions);
-  return submissions[idx];
+async function update(id, updates) {
+  const dbUpdates = toDb({ ...updates, updatedAt: new Date().toISOString() });
+  const { data, error } = await supabase
+    .from('submissions')
+    .update(dbUpdates)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) {
+    if (error.code === NOT_FOUND) return null;
+    throw error;
+  }
+  return fromDb(data);
 }
 
 module.exports = { getAll, getById, getByTrackingId, create, update };
+
+

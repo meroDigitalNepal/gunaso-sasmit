@@ -22,6 +22,17 @@ npm run dev:server   # http://localhost:3001
 npm run dev:client   # http://localhost:5173
 ```
 
+### Run tests
+```bash
+npm test
+```
+
+Server tests can also be run directly:
+```bash
+cd server
+npm test
+```
+
 ## API
 
 | Method | Route | Description |

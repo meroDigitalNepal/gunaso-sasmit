@@ -1,18 +1,26 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const submissionsRouter = require('./routes/submissions');
+const defaultStore = require('./store/submissionsStore');
+const { createSubmissionsRouter } = require('./routes/submissions');
 
-const app = express();
-const PORT = process.env.PORT || 3001;
+function createApp(store = defaultStore) {
+  const app = express();
 
-app.use(cors());
-app.use(express.json());
+  app.use(cors());
+  app.use(express.json());
 
-app.use('/api/submissions', submissionsRouter);
+  app.use('/api/submissions', createSubmissionsRouter(store));
 
-app.listen(PORT, () => {
-  console.log(`Gunaso server running on http://localhost:${PORT}`);
-});
+  return app;
+}
 
-module.exports = app;
+if (require.main === module) {
+  const PORT = process.env.PORT || 3001;
+  const app = createApp();
+  app.listen(PORT, () => {
+    console.log(`Gunaso server running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = createApp;

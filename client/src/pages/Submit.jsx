@@ -127,7 +127,7 @@ export default function Submit() {
               </div>
             </div>
           </div>
-          <Stack direction="row" gap="12px" justify="center" wrap style={{ justifyContent: 'center' }}>
+          <Stack direction="row" gap="12px" justify="center" wrap>
             <Button as={Link} to={`/track/${result.trackingId}`}>Track this request</Button>
             <Button variant="secondary" onClick={() => setResult(null)}>Submit another</Button>
           </Stack>

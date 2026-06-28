@@ -50,7 +50,7 @@ ACR_LOGIN_SERVER=$(az acr show --name "$ACR_NAME" --query loginServer -o tsv)
 ACR_USERNAME=$(az acr credential show --name "$ACR_NAME" --query username -o tsv)
 ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME" --query "passwords[0].value" -o tsv)
 ENTRA_CLIENT_ID=$(az ad app list --display-name "gunaso" --query "[0].appId" -o tsv)
-ENTRA_TENANT_ID=$(az account show --query tenantId -o tsv)
+ENTRA_TENANT_ID=$(az ad sp show --id "$ENTRA_CLIENT_ID" --query "appOwnerOrganizationId" -o tsv)
 
 # 1. Seed parliamentarian row in database ─────────────────────────────────────
 echo "→ [1/4] Seeding parliamentarian in database..."

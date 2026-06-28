@@ -43,7 +43,7 @@ async function requireAuth(req, res, next) {
     token,
     getSigningKey,
     {
-      audience: `api://${process.env.ENTRA_CLIENT_ID}`,
+      audience: process.env.ENTRA_CLIENT_ID,
       issuer: `https://login.microsoftonline.com/${process.env.ENTRA_TENANT_ID}/v2.0`,
     },
     async (err, decoded) => {

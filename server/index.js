@@ -3,14 +3,18 @@ const express = require('express');
 const cors = require('cors');
 const defaultStore = require('./store/submissionsStore');
 const { createSubmissionsRouter } = require('./routes/submissions');
+const { resolveTenant } = require('./middleware/tenant');
 
-function createApp(store = defaultStore) {
+function createApp(store = defaultStore, { resolveTenantMiddleware = resolveTenant } = {}) {
   const app = express();
 
-  app.use(cors());
+  app.use(cors({
+    origin: process.env.CORS_ORIGIN || '*',
+    credentials: true,
+  }));
   app.use(express.json());
 
-  app.use('/api/submissions', createSubmissionsRouter(store));
+  app.use('/api/submissions', createSubmissionsRouter(store, { resolveTenantMiddleware }));
 
   return app;
 }

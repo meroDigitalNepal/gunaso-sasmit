@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: gunaso
+      POSTGRES_PASSWORD: gunaso
+      POSTGRES_DB: gunaso
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gunaso"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    build:
+      context: ./server
+    command: node migrate.js
+    environment:
+      DATABASE_URL: postgresql://gunaso:gunaso@db:5432/gunaso
+      NODE_ENV: development
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  server:
+    build:
+      context: ./server
+    ports:
+      - "3001:3001"
+    # Non-sensitive overrides are inline; put ENTRA_* and PARLIAMENTARIAN_ID in server/.env
+    env_file:
+      - ./server/.env
+    environment:
+      # Always points to the local db container regardless of what .env says
+      DATABASE_URL: postgresql://gunaso:gunaso@db:5432/gunaso
+      NODE_ENV: development
+      CORS_ORIGIN: http://localhost:5173
+      PORT: "3001"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  postgres_data:

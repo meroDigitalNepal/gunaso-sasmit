@@ -1,85 +1,94 @@
-const { toDb, fromDb } = require('../utils/caseConvert');
+const { fromDb, toDb } = require('../utils/caseConvert');
 
-// PostgREST error code for zero rows returned by .single()
-const NOT_FOUND = 'PGRST116';
-
-let defaultStore;
-
-function getDefaultSupabase() {
-  return require('../utils/supabase').supabase;
+// parliamentarian_id is a server-side scoping key; strip it before returning
+// submissions to callers so it never appears in API responses.
+function toSubmission(dbRow) {
+  const row = fromDb(dbRow);
+  delete row.parliamentarianId;
+  return row;
 }
 
-function createSubmissionsStore(supabaseClient = getDefaultSupabase()) {
-  async function getAll(filters = {}) {
-    let query = supabaseClient
-      .from('submissions')
-      .select('*')
-      .order('created_at', { ascending: false });
+function createSubmissionsStore(pool) {
+  async function getAll(parliamentarianId, filters = {}) {
+    const conditions = ['parliamentarian_id = $1'];
+    const params = [parliamentarianId];
 
-    if (filters.status) query = query.eq('status', filters.status);
-    if (filters.category) query = query.eq('category', filters.category);
-
-    const { data, error } = await query;
-    if (error) throw error;
-    return data.map(fromDb);
-  }
-
-  async function getById(id) {
-    const { data, error } = await supabaseClient
-      .from('submissions')
-      .select('*')
-      .eq('id', id)
-      .single();
-    if (error) {
-      if (error.code === NOT_FOUND) return null;
-      throw error;
+    if (filters.status) {
+      conditions.push(`status = $${params.length + 1}`);
+      params.push(filters.status);
     }
-    return fromDb(data);
-  }
-
-  async function getByTrackingId(trackingId) {
-    const { data, error } = await supabaseClient
-      .from('submissions')
-      .select('*')
-      .eq('tracking_id', trackingId)
-      .single();
-    if (error) {
-      if (error.code === NOT_FOUND) return null;
-      throw error;
+    if (filters.category) {
+      conditions.push(`category = $${params.length + 1}`);
+      params.push(filters.category);
     }
-    return fromDb(data);
+
+    const sql = `SELECT * FROM submissions WHERE ${conditions.join(' AND ')} ORDER BY created_at DESC`;
+    const { rows } = await pool.query(sql, params);
+    return rows.map(toSubmission);
   }
 
-  async function create(submission) {
-    const { data, error } = await supabaseClient
-      .from('submissions')
-      .insert(toDb(submission))
-      .select()
-      .single();
-    if (error) throw error;
-    return fromDb(data);
+  async function getById(parliamentarianId, id) {
+    const { rows } = await pool.query(
+      'SELECT * FROM submissions WHERE id = $1 AND parliamentarian_id = $2',
+      [id, parliamentarianId],
+    );
+    return rows[0] ? toSubmission(rows[0]) : null;
   }
 
-  async function update(id, updates) {
+  async function getByTrackingId(parliamentarianId, trackingId) {
+    const { rows } = await pool.query(
+      'SELECT * FROM submissions WHERE tracking_id = $1 AND parliamentarian_id = $2',
+      [trackingId, parliamentarianId],
+    );
+    return rows[0] ? toSubmission(rows[0]) : null;
+  }
+
+  async function create(parliamentarianId, submission) {
+    const dbRow = { ...toDb(submission), parliamentarian_id: parliamentarianId };
+    const columns = Object.keys(dbRow);
+    const placeholders = columns.map((_, i) => `$${i + 1}`);
+    const values = columns.map(col => dbRow[col]);
+
+    const sql = `
+      INSERT INTO submissions (${columns.join(', ')})
+      VALUES (${placeholders.join(', ')})
+      RETURNING *
+    `;
+    const { rows } = await pool.query(sql, values);
+    return toSubmission(rows[0]);
+  }
+
+  async function update(parliamentarianId, id, updates) {
     const dbUpdates = toDb({ ...updates, updatedAt: new Date().toISOString() });
-    const { data, error } = await supabaseClient
-      .from('submissions')
-      .update(dbUpdates)
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) {
-      if (error.code === NOT_FOUND) return null;
-      throw error;
-    }
-    return fromDb(data);
+    const columns = Object.keys(dbUpdates);
+
+    const setClauses = columns.map((col, i) => `${col} = $${i + 1}`);
+    const values = [
+      ...columns.map(col => dbUpdates[col]),
+      id,
+      parliamentarianId,
+    ];
+
+    const sql = `
+      UPDATE submissions
+      SET ${setClauses.join(', ')}
+      WHERE id = $${columns.length + 1} AND parliamentarian_id = $${columns.length + 2}
+      RETURNING *
+    `;
+    const { rows } = await pool.query(sql, values);
+    return rows[0] ? toSubmission(rows[0]) : null;
   }
 
   return { getAll, getById, getByTrackingId, create, update };
 }
 
+let defaultStore;
+
 function getDefaultStore() {
-  if (!defaultStore) defaultStore = createSubmissionsStore();
+  if (!defaultStore) {
+    const pool = require('../utils/db');
+    defaultStore = createSubmissionsStore(pool);
+  }
   return defaultStore;
 }
 

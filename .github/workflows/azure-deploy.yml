@@ -1,34 +1,47 @@
-name: Azure Deploy
+name: Deploy Parliamentarian App
 
 on:
   push:
     branches:
-      - main
+      - 'parl/**'
   workflow_dispatch:
 
 jobs:
-  deploy-frontend:
-    name: Deploy frontend to Azure Static Web Apps
+  # ---------------------------------------------------------------------------
+  # Extract the parliamentarian name from the branch name.
+  # parl/abc  →  abc
+  # This name is used as the GitHub Environment, so each job pulls secrets
+  # from the matching environment.
+  # ---------------------------------------------------------------------------
+  resolve-env:
+    name: Resolve environment
     runs-on: ubuntu-latest
+    outputs:
+      parliamentarian: ${{ steps.extract.outputs.parliamentarian }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Extract parliamentarian name from branch
+        id: extract
+        run: echo "parliamentarian=${GITHUB_REF_NAME#parl/}" >> $GITHUB_OUTPUT
 
-      - name: Deploy frontend
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: upload
-          app_location: client
-          output_location: dist
-          skip_app_build: false
-        env:
-          VITE_API_BASE_URL: ${{ secrets.AZURE_API_BASE_URL }}
-
+  # ---------------------------------------------------------------------------
+  # Backend — builds a Docker image, runs migrations, deploys to Container Apps.
+  #
+  # Repo-level secrets:  AZURE_CLIENT_ID, AZURE_CLIENT_SECRET,
+  #                      AZURE_SUBSCRIPTION_ID, AZURE_TENANT_ID,
+  #                      ACR_LOGIN_SERVER, ACR_USERNAME, ACR_PASSWORD,
+  #                      AZURE_RESOURCE_GROUP, DATABASE_URL
+  # Environment secrets: AZURE_CONTAINER_APP_NAME
+  #
+  # All other Container App env vars (PARLIAMENTARIAN_ID, CORS_ORIGIN,
+  # ENTRA_TENANT_ID, NODE_ENV, PORT) are set once at Container App creation
+  # and are NOT re-set on each deploy — only the image is updated here.
+  # ---------------------------------------------------------------------------
   deploy-backend:
-    name: Deploy backend to Azure App Service
+    name: Deploy backend (${{ needs.resolve-env.outputs.parliamentarian }})
+    needs: resolve-env
     runs-on: ubuntu-latest
+    environment: ${{ needs.resolve-env.outputs.parliamentarian }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,9 +50,30 @@ jobs:
         uses: azure/login@v2
         with:
           creds: >-
-            {"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}
+            {
+              "clientId":       "${{ secrets.AZURE_CLIENT_ID }}",
+              "clientSecret":   "${{ secrets.AZURE_CLIENT_SECRET }}",
+              "subscriptionId": "${{ secrets.AZURE_SUBSCRIPTION_ID }}",
+              "tenantId":       "${{ secrets.AZURE_TENANT_ID }}"
+            }
 
-      - name: Setup Node.js
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push server image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./server
+          push: true
+          tags: |
+            ${{ secrets.ACR_LOGIN_SERVER }}/gunaso-${{ needs.resolve-env.outputs.parliamentarian }}:${{ github.sha }}
+            ${{ secrets.ACR_LOGIN_SERVER }}/gunaso-${{ needs.resolve-env.outputs.parliamentarian }}:latest
+
+      - name: Setup Node.js for migrations
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -50,43 +84,52 @@ jobs:
         working-directory: server
         run: npm ci --omit=dev
 
-      - name: Deploy backend
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: server
+      - name: Run database migrations
+        working-directory: server
+        run: node migrate.js
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NODE_ENV: production
 
-      - name: Configure app settings
-        uses: azure/appservice-settings@v1
+      - name: Deploy to Azure Container Apps
+        uses: azure/cli@v2
         with:
-          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
-          mask-inputs: false
-          app-settings-json: |
-            [
-              {
-                "name": "PORT",
-                "value": "3001",
-                "slotSetting": false
-              },
-              {
-                "name": "NODE_ENV",
-                "value": "production",
-                "slotSetting": false
-              },
-              {
-                "name": "SUPABASE_URL",
-                "value": "${{ secrets.SUPABASE_URL }}",
-                "slotSetting": false
-              },
-              {
-                "name": "SUPABASE_KEY",
-                "value": "${{ secrets.SUPABASE_KEY }}",
-                "slotSetting": false
-              },
-              {
-                "name": "WEBSITES_PORT",
-                "value": "3001",
-                "slotSetting": false
-              }
-            ]
+          azcliversion: latest
+          inlineScript: |
+            az containerapp update \
+              --name ${{ secrets.AZURE_CONTAINER_APP_NAME }} \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --image ${{ secrets.ACR_LOGIN_SERVER }}/gunaso-${{ needs.resolve-env.outputs.parliamentarian }}:${{ github.sha }}
+
+  # ---------------------------------------------------------------------------
+  # Frontend — React SPA deployed to Azure Static Web Apps (unchanged).
+  # Repo-level secrets:  ENTRA_CLIENT_ID, VITE_ENTRA_AUTHORITY,
+  #                      VITE_ENTRA_API_SCOPE
+  # Environment secrets: AZURE_STATIC_WEB_APPS_API_TOKEN, AZURE_API_BASE_URL
+  # Branch-derived:      VITE_TENANT_SUBDOMAIN (no secret needed)
+  # ---------------------------------------------------------------------------
+  deploy-frontend:
+    name: Deploy frontend (${{ needs.resolve-env.outputs.parliamentarian }})
+    needs: resolve-env
+    runs-on: ubuntu-latest
+    environment: ${{ needs.resolve-env.outputs.parliamentarian }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy frontend to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: client
+          output_location: dist
+          skip_app_build: false
+        env:
+          VITE_API_BASE_URL: ${{ secrets.AZURE_API_BASE_URL }}
+          VITE_ENTRA_CLIENT_ID: ${{ secrets.ENTRA_CLIENT_ID }}
+          VITE_ENTRA_AUTHORITY: ${{ secrets.VITE_ENTRA_AUTHORITY }}
+          VITE_ENTRA_API_SCOPE: ${{ secrets.VITE_ENTRA_API_SCOPE }}
+          VITE_TENANT_SUBDOMAIN: ${{ needs.resolve-env.outputs.parliamentarian }}

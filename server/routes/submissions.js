@@ -24,7 +24,7 @@ function createSubmissionsRouter(store = defaultStore, { resolveTenantMiddleware
     const now = new Date().toISOString();
     const submission = {
       id: uuidv4(),
-      trackingId: uuidv4(),
+      trackingId: uuidv4().toUpperCase(),
       title,
       category,
       description,

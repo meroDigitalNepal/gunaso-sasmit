@@ -39,6 +39,7 @@ echo "Container App : $CONTAINER_APP_NAME"
 echo "GitHub env    : $PARLIAMENTARIAN"
 echo ""
 
+read -rp "Parliamentarian display name (e.g. 'Sasmit Patel'): " PARL_DISPLAY_NAME
 read -rp "CORS_ORIGIN (e.g. https://${PARLIAMENTARIAN}.sachivalaya.org): " CORS_ORIGIN
 read -rsp "DATABASE_URL (from provision-shared.sh output): " DATABASE_URL
 echo ""
@@ -51,8 +52,26 @@ ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME" --query "passwords[0].v
 ENTRA_CLIENT_ID=$(az ad app list --display-name "gunaso" --query "[0].appId" -o tsv)
 ENTRA_TENANT_ID=$(az account show --query tenantId -o tsv)
 
-# 1. Create Container App ─────────────────────────────────────────────────────
-echo "→ [1/3] Creating Container App..."
+# 1. Seed parliamentarian row in database ─────────────────────────────────────
+echo "→ [1/4] Seeding parliamentarian in database..."
+if command -v psql &>/dev/null; then
+  psql "$DATABASE_URL" -c "
+    INSERT INTO parliamentarians (id, name, subdomain)
+    VALUES ('${PARLIAMENTARIAN_ID}', '${PARL_DISPLAY_NAME}', '${PARLIAMENTARIAN}')
+    ON CONFLICT (id) DO NOTHING;
+  "
+else
+  echo "   psql not found. Run this SQL manually, then press Enter:"
+  echo ""
+  echo "   INSERT INTO parliamentarians (id, name, subdomain)"
+  echo "   VALUES ('${PARLIAMENTARIAN_ID}', '${PARL_DISPLAY_NAME}', '${PARLIAMENTARIAN}')"
+  echo "   ON CONFLICT (id) DO NOTHING;"
+  echo ""
+  read -rp "   Press Enter once done..."
+fi
+
+# 2. Create Container App ─────────────────────────────────────────────────────
+echo "→ [2/4] Creating Container App..."
 
 az containerapp create \
   --name "$CONTAINER_APP_NAME" \
@@ -87,15 +106,15 @@ CONTAINER_APP_FQDN=$(az containerapp show \
 
 echo "   Container App URL: https://$CONTAINER_APP_FQDN"
 
-# 2. Create GitHub environment and set secrets ─────────────────────────────────
-echo "→ [2/3] Creating GitHub environment and setting secrets..."
+# 3. Create GitHub environment and set secrets ─────────────────────────────────
+echo "→ [3/4] Creating GitHub environment and setting secrets..."
 gh api --method PUT "repos/${GITHUB_REPO}/environments/${PARLIAMENTARIAN}" --silent
 
 gh secret set AZURE_CONTAINER_APP_NAME \
   --env "$PARLIAMENTARIAN" --repo "$GITHUB_REPO" --body "$CONTAINER_APP_NAME"
 
-# 3. Create branch and push ───────────────────────────────────────────────────
-echo "→ [3/3] Creating branch parl/${PARLIAMENTARIAN}..."
+# 4. Create branch and push ───────────────────────────────────────────────────
+echo "→ [4/4] Creating branch parl/${PARLIAMENTARIAN}..."
 CURRENT_BRANCH=$(git branch --show-current)
 git checkout main
 git checkout -b "parl/${PARLIAMENTARIAN}" 2>/dev/null || git checkout "parl/${PARLIAMENTARIAN}"

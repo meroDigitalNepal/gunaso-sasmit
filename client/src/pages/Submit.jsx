@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api';
 
 const CATEGORIES = [
@@ -119,7 +120,7 @@ export default function Submit() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <a href={`/track/${result.trackingId}`} className="btn btn-primary">Track this request</a>
+            <Link to={`/track/${result.trackingId}`} className="btn btn-primary">Track this request</Link>
             <button className="btn btn-secondary" onClick={() => setResult(null)}>Submit another</button>
           </div>
         </div>

@@ -39,7 +39,7 @@ echo "Container App : $CONTAINER_APP_NAME"
 echo "GitHub env    : $PARLIAMENTARIAN"
 echo ""
 
-read -rp "CORS_ORIGIN (e.g. https://${PARLIAMENTARIAN}.sachivalaya.com): " CORS_ORIGIN
+read -rp "CORS_ORIGIN (e.g. https://${PARLIAMENTARIAN}.sachivalaya.org): " CORS_ORIGIN
 read -rsp "DATABASE_URL (from provision-shared.sh output): " DATABASE_URL
 echo ""
 echo ""
@@ -108,7 +108,7 @@ echo ""
 echo "GitHub Actions will run on the next push to parl/${PARLIAMENTARIAN}."
 echo "App will be available at: https://${CONTAINER_APP_FQDN}/gunaso"
 echo ""
-echo "To add a custom domain (john.sachivalaya.com), configure it in:"
+echo "To add a custom domain (john.sachivalaya.org), configure it in:"
 echo "  Azure Portal → Container Apps → $CONTAINER_APP_NAME → Custom domains"
 echo ""
 echo "To add staff, insert into the users table:"

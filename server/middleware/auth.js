@@ -48,7 +48,8 @@ async function requireAuth(req, res, next) {
     },
     async (err, decoded) => {
       if (err) {
-        return res.status(401).json({ error: 'Invalid or expired token.' });
+        console.error('[auth] JWT verification failed:', err.name, err.message);
+        return res.status(401).json({ error: 'Invalid or expired token.', detail: err.message });
       }
 
       try {

@@ -1,7 +1,7 @@
 FROM node:22-alpine AS frontend-builder
 WORKDIR /build
-COPY client/package*.json client/.npmrc ./
-RUN npm ci
+COPY client/package*.json ./
+RUN npm ci --legacy-peer-deps
 COPY client/ ./
 ARG VITE_ENTRA_CLIENT_ID
 ARG VITE_ENTRA_AUTHORITY

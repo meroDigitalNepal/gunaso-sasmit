@@ -8,8 +8,8 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        redirect: resolve(__dirname, 'redirect.html'),
+        main: resolve(import.meta.dirname, 'index.html'),
+        redirect: resolve(import.meta.dirname, 'redirect.html'),
       },
     },
   },

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Heading, Text, Button, Card, Input, Select, Textarea, Stack } from '@mero-nepal/ui';
+import Alert from '../components/Alert';
 import { api } from '../api';
 
 const CATEGORIES = [
@@ -44,22 +46,28 @@ export default function Submit() {
   if (result) {
     return (
       <main className="page" style={{ paddingTop: '80px', paddingBottom: '80px', maxWidth: '560px' }}>
-        <div className="card" style={{ textAlign: 'center' }}>
+        <Card style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '16px' }}>✓</div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '8px' }}>Request submitted</h2>
-          <p className="text-secondary mb-24">Save your tracking ID to check on progress.</p>
+          <Heading level={3} style={{ marginBottom: '8px' }}>Request submitted</Heading>
+          <Text subtle style={{ marginBottom: '24px' }}>Save your tracking ID to check on progress.</Text>
           <div style={{
-            background: '#fff',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-sm)',
+            background: 'var(--mero-colors-surface)',
+            border: '1px solid var(--mero-colors-border)',
+            borderRadius: 'var(--mero-radii-md)',
             padding: '18px 24px',
             marginBottom: '24px',
           }}>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', marginBottom: '4px' }}>Tracking ID</p>
+            <Text size="sm" subtle style={{ marginBottom: '4px' }}>Tracking ID</Text>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-              <p style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '1px', color: 'var(--color-accent)', margin: 0 }}>
+              <Text
+                as="span"
+                size="xl"
+                weight="bold"
+                color="var(--mero-colors-primary)"
+                style={{ letterSpacing: '1px' }}
+              >
                 {result.trackingId}
-              </p>
+              </Text>
               <div style={{ position: 'relative', display: 'inline-flex' }}>
                 {copied && (
                   <div style={{
@@ -67,12 +75,12 @@ export default function Submit() {
                     bottom: 'calc(100% + 6px)',
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    background: 'var(--color-text-primary)',
-                    color: '#fff',
-                    fontSize: '0.75rem',
-                    fontWeight: 500,
+                    background: 'var(--mero-colors-text)',
+                    color: 'var(--mero-colors-surface)',
+                    fontSize: 'var(--mero-typography-size-xs)',
+                    fontWeight: 'var(--mero-typography-weight-medium)',
                     padding: '4px 8px',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--mero-radii-sm)',
                     whiteSpace: 'nowrap',
                     pointerEvents: 'none',
                   }}>
@@ -84,7 +92,7 @@ export default function Submit() {
                       transform: 'translateX(-50%)',
                       borderWidth: '4px',
                       borderStyle: 'solid',
-                      borderColor: 'var(--color-text-primary) transparent transparent transparent',
+                      borderColor: 'var(--mero-colors-text) transparent transparent transparent',
                     }} />
                   </div>
                 )}
@@ -95,86 +103,78 @@ export default function Submit() {
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: copied ? '#e6f4ea' : 'var(--color-surface)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: 'var(--radius-sm)',
+                    background: copied ? 'var(--mero-colors-success-subtle)' : 'var(--mero-colors-surface-raised)',
+                    border: '1px solid var(--mero-colors-border)',
+                    borderRadius: 'var(--mero-radii-sm)',
                     width: '32px',
                     height: '32px',
                     cursor: 'pointer',
                     flexShrink: 0,
-                    transition: 'background 0.15s',
+                    transition: 'background var(--mero-motion-duration-fast) var(--mero-motion-easing)',
                   }}
                 >
                   {copied ? (
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M3 8.5L6.5 12L13 5" stroke="#1d7a3b" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M3 8.5L6.5 12L13 5" stroke="var(--mero-colors-success)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   ) : (
                     <svg width="16" height="16" viewBox="-1 -1 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <rect x="5.5" y="5.5" width="8" height="9" rx="1.5" stroke="var(--color-text-secondary)" strokeWidth="1.25"/>
-                      <path d="M5.5 10H4a1.5 1.5 0 0 1-1.5-1.5v-7A1.5 1.5 0 0 1 4 0h7a1.5 1.5 0 0 1 1.5 1.5V3" stroke="var(--color-text-secondary)" strokeWidth="1.25" strokeLinecap="round"/>
+                      <rect x="5.5" y="5.5" width="8" height="9" rx="1.5" stroke="var(--mero-colors-text-subtle)" strokeWidth="1.25"/>
+                      <path d="M5.5 10H4a1.5 1.5 0 0 1-1.5-1.5v-7A1.5 1.5 0 0 1 4 0h7a1.5 1.5 0 0 1 1.5 1.5V3" stroke="var(--mero-colors-text-subtle)" strokeWidth="1.25" strokeLinecap="round"/>
                     </svg>
                   )}
                 </button>
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to={`/track/${result.trackingId}`} className="btn btn-primary">Track this request</Link>
-            <button className="btn btn-secondary" onClick={() => setResult(null)}>Submit another</button>
-          </div>
-        </div>
+          <Stack direction="row" gap="12px" justify="center" wrap>
+            <Button as={Link} to={`/track/${result.trackingId}`}>Track this request</Button>
+            <Button variant="secondary" onClick={() => setResult(null)}>Submit another</Button>
+          </Stack>
+        </Card>
       </main>
     );
   }
 
   return (
     <main className="page" style={{ paddingTop: '64px', paddingBottom: '80px', maxWidth: '560px' }}>
-      <h1 style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.5px', marginBottom: '8px' }}>Submit a request</h1>
-      <p className="text-secondary mb-40">Your MP's team will review and respond to your submission.</p>
+      <Heading level={1} style={{ marginBottom: '8px' }}>Submit a request</Heading>
+      <Text subtle style={{ marginBottom: '40px' }}>Your MP's team will review and respond to your submission.</Text>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <Alert style={{ marginBottom: '20px' }}>{error}</Alert>}
 
       <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="title">Title</label>
-          <input
-            id="title" name="title" type="text"
+        <Stack gap="20px">
+          <Input
+            label="Title" name="title"
             placeholder="Brief summary of your request"
             value={form.title} onChange={handleChange} required
           />
-        </div>
 
-        <div className="form-group">
-          <label htmlFor="category">Category</label>
-          <select id="category" name="category" value={form.category} onChange={handleChange} required>
-            <option value="">Select a category</option>
-            {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-          </select>
-        </div>
+          <Select
+            label="Category" name="category"
+            placeholder="Select a category"
+            options={CATEGORIES}
+            value={form.category} onChange={handleChange} required
+          />
 
-        <div className="form-group">
-          <label htmlFor="description">Description</label>
-          <textarea
-            id="description" name="description"
+          <Textarea
+            label="Description" name="description"
             placeholder="Describe your request in detail"
             value={form.description} onChange={handleChange} required
           />
-        </div>
 
-        <div className="form-group">
-          <label htmlFor="contactEmail">Contact email <span className="text-secondary" style={{ fontWeight: 400 }}>(optional)</span></label>
-          <input
-            id="contactEmail" name="contactEmail" type="email"
+          <Input
+            label="Contact email" name="contactEmail" type="email"
             placeholder="you@example.com"
             value={form.contactEmail} onChange={handleChange}
+            hint="We'll only use this to follow up on your request."
           />
-          <span className="form-hint">We'll only use this to follow up on your request.</span>
-        </div>
 
-        <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', marginTop: '8px' }}>
-          {loading ? 'Submitting…' : 'Submit request'}
-        </button>
+          <Button type="submit" loading={loading} style={{ width: '100%' }}>
+            {loading ? 'Submitting…' : 'Submit request'}
+          </Button>
+        </Stack>
       </form>
     </main>
   );

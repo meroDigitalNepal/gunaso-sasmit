@@ -1,16 +1,39 @@
-# React + Vite
+# Gunaso client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite frontend for the Gunaso civic feedback platform.
 
-Currently, two official plugins are available:
+## UI: `@mero-nepal/ui`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The client is built on [`@mero-nepal/ui`](https://www.npmjs.com/package/@mero-nepal/ui),
+the shared Mero Digital Nepal design system. All apps in the suite use the same
+component library and tokens so they look and behave consistently.
 
-## React Compiler
+- **Theme** — `src/main.jsx` wraps the app in `<ThemeProvider>` with
+  `createTheme({ extends: 'mdn-light' })`, plus `<LocaleProvider>`. The provider
+  exposes design tokens as `--mero-*` CSS variables on its wrapper element.
+  > Use `createTheme(...)`, not the raw `mdnLight` export — only the
+  > `createTheme` result carries the `cssVars` the provider injects.
+- **Components** — pages compose library primitives (`Button`, `Input`,
+  `Select`, `Textarea`, `Card`, `Badge`, `Heading`, `Text`, `Stack`,
+  `Skeleton`, …) instead of hand-rolled markup.
+- **`src/components/Alert.jsx`** — small local banner built from `--mero-*`
+  tokens, since the library has no Alert primitive.
+- **`src/index.css`** — limited to app-shell concerns the library doesn't own
+  (resets, page layout, nav, table), themed via `--mero-*` tokens. It also
+  defines the `mero-spin` / `mero-shimmer` keyframes the library references for
+  its spinner and skeleton but does not ship.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### React 19 peer dependency
 
-## Expanding the ESLint configuration
+`@mero-nepal/ui` declares a React 18 peer while this app runs on React 19. The
+components only use stable React APIs, so `.npmrc` sets `legacy-peer-deps=true`
+to accept the version skew during install.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Scripts
+
+```bash
+npm run dev       # start the Vite dev server (proxies /api -> localhost:3001)
+npm run build     # production build
+npm run preview   # serve the production build locally
+npm run lint      # ESLint
+```

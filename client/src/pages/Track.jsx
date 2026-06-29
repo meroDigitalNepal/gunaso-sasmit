@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { Heading, Text, Button, Card, Input, Badge } from '@mero-nepal/ui';
+import Alert from '../components/Alert';
 import { api } from '../api';
 
 const STATUS_LABELS = { new: 'New', in_review: 'In Review', resolved: 'Resolved' };
+const STATUS_VARIANTS = { new: 'primary', in_review: 'warning', resolved: 'success' };
 const CATEGORY_LABELS = {
   infrastructure: 'Infrastructure', health: 'Health',
   education: 'Education', security: 'Security', other: 'Other',
@@ -17,20 +20,34 @@ function StatusTimeline({ status }) {
         <div key={step} style={{ display: 'flex', alignItems: 'center', flex: i < steps.length - 1 ? 1 : 'none' }}>
           <div style={{
             width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-            background: i <= current ? 'var(--color-accent)' : 'var(--color-border)',
+            background: i <= current ? 'var(--mero-colors-primary)' : 'var(--mero-colors-border)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontSize: '0.75rem', fontWeight: 600,
+            color: 'var(--mero-colors-text-on-primary)', fontSize: 'var(--mero-typography-size-xs)',
+            fontWeight: 'var(--mero-typography-weight-semibold)',
           }}>
             {i < current ? '✓' : i + 1}
           </div>
-          <div style={{ fontSize: '0.75rem', position: 'absolute', marginTop: '44px', marginLeft: '-20px', whiteSpace: 'nowrap', color: i <= current ? 'var(--color-text-primary)' : 'var(--color-text-secondary)' }}>
+          <div style={{
+            fontSize: 'var(--mero-typography-size-xs)', position: 'absolute', marginTop: '44px',
+            marginLeft: '-20px', whiteSpace: 'nowrap',
+            color: i <= current ? 'var(--mero-colors-text)' : 'var(--mero-colors-text-subtle)',
+          }}>
             {STATUS_LABELS[step]}
           </div>
           {i < steps.length - 1 && (
-            <div style={{ flex: 1, height: '2px', background: i < current ? 'var(--color-accent)' : 'var(--color-border)', margin: '0 4px' }} />
+            <div style={{ flex: 1, height: '2px', background: i < current ? 'var(--mero-colors-primary)' : 'var(--mero-colors-border)', margin: '0 4px' }} />
           )}
         </div>
       ))}
+    </div>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <div>
+      <Text size="xs" subtle>{label}</Text>
+      <Text size="sm">{children}</Text>
     </div>
   );
 }
@@ -52,7 +69,7 @@ export default function Track() {
     try {
       const data = await api.trackSubmission(id.trim().toUpperCase());
       setSubmission(data);
-    } catch (err) {
+    } catch {
       setError('No submission found with that tracking ID.');
       setSubmission(null);
     } finally {
@@ -67,38 +84,31 @@ export default function Track() {
 
   return (
     <main className="page" style={{ paddingTop: '64px', paddingBottom: '80px', maxWidth: '640px' }}>
-      <h1 style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.5px', marginBottom: '8px' }}>Track your request</h1>
-      <p className="text-secondary mb-40">Enter your tracking ID to see the current status.</p>
+      <Heading level={1} style={{ marginBottom: '8px' }}>Track your request</Heading>
+      <Text subtle style={{ marginBottom: '40px' }}>Enter your tracking ID to see the current status.</Text>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '10px', marginBottom: '40px' }}>
-        <input
-          type="text" value={input} onChange={e => setInput(e.target.value)}
+      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '40px' }}>
+        <Input
+          value={input}
+          onChange={e => setInput(e.target.value)}
           placeholder="Your tracking number here..."
-          style={{
-            flex: 1, padding: '10px 14px', border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-sans)', fontSize: '0.9375rem',
-            outline: 'none',
-          }}
-          onFocus={e => e.target.style.borderColor = 'var(--color-accent)'}
-          onBlur={e => e.target.style.borderColor = 'var(--color-border)'}
+          style={{ flex: 1 }}
         />
-        <button type="submit" className="btn btn-primary" disabled={loading}>
+        <Button type="submit" loading={loading}>
           {loading ? 'Looking up…' : 'Track'}
-        </button>
+        </Button>
       </form>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <Alert style={{ marginBottom: '20px' }}>{error}</Alert>}
 
       {submission && (
-        <div className="card">
+        <Card>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
             <div>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', marginBottom: '4px' }}>
-                {submission.trackingId}
-              </p>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{submission.title}</h2>
+              <Text size="sm" subtle style={{ marginBottom: '4px' }}>{submission.trackingId}</Text>
+              <Heading level={4}>{submission.title}</Heading>
             </div>
-            <span className={`badge badge-${submission.status}`}>{STATUS_LABELS[submission.status]}</span>
+            <Badge variant={STATUS_VARIANTS[submission.status]}>{STATUS_LABELS[submission.status]}</Badge>
           </div>
 
           <div style={{ marginTop: '16px', paddingBottom: '48px' }}>
@@ -106,32 +116,23 @@ export default function Track() {
           </div>
 
           <div style={{ display: 'flex', gap: '20px', marginTop: '12px', flexWrap: 'wrap' }}>
-            <div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Category</p>
-              <p style={{ fontSize: '0.9rem' }}>{CATEGORY_LABELS[submission.category]}</p>
-            </div>
-            <div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Submitted</p>
-              <p style={{ fontSize: '0.9rem' }}>{new Date(submission.createdAt).toLocaleDateString()}</p>
-            </div>
-            <div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Last updated</p>
-              <p style={{ fontSize: '0.9rem' }}>{new Date(submission.updatedAt).toLocaleDateString()}</p>
-            </div>
+            <Field label="Category">{CATEGORY_LABELS[submission.category]}</Field>
+            <Field label="Submitted">{new Date(submission.createdAt).toLocaleDateString()}</Field>
+            <Field label="Last updated">{new Date(submission.updatedAt).toLocaleDateString()}</Field>
           </div>
 
-          <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--color-border)' }}>
-            <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '6px' }}>Description</p>
-            <p style={{ fontSize: '0.9rem', lineHeight: 1.6 }}>{submission.description}</p>
+          <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--mero-colors-border)' }}>
+            <Text size="xs" subtle style={{ marginBottom: '6px' }}>Description</Text>
+            <Text size="sm" style={{ lineHeight: 1.6 }}>{submission.description}</Text>
           </div>
 
           {submission.publicResponse && (
-            <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--color-border)' }}>
-              <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '6px' }}>Response from MP's team</p>
-              <p style={{ fontSize: '0.9rem', lineHeight: 1.6 }}>{submission.publicResponse}</p>
+            <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--mero-colors-border)' }}>
+              <Text size="xs" subtle style={{ marginBottom: '6px' }}>Response from MP's team</Text>
+              <Text size="sm" style={{ lineHeight: 1.6 }}>{submission.publicResponse}</Text>
             </div>
           )}
-        </div>
+        </Card>
       )}
     </main>
   );

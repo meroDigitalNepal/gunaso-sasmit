@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { Heading, Text, Button, Card, Select, Textarea, Stack } from '@mero-nepal/ui';
+import Alert from '../components/Alert';
 import { api } from '../api';
 
 const STATUS_OPTIONS = [
@@ -61,84 +63,70 @@ export default function RequestDetail() {
     }
   }
 
-  const inputStyle = {
-    fontFamily: 'var(--font-sans)', fontSize: '0.9375rem', padding: '10px 14px',
-    border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)',
-    width: '100%', outline: 'none', background: '#fff',
-  };
-
-  if (loading) return <main className="page" style={{ paddingTop: '64px' }}><p className="text-secondary">Loading…</p></main>;
+  if (loading) return <main className="page" style={{ paddingTop: '64px' }}><Text subtle>Loading…</Text></main>;
   if (error && !submission) return (
     <main className="page" style={{ paddingTop: '64px' }}>
-      <div className="alert alert-error">{error}</div>
-      <Link to="/dashboard" className="btn btn-secondary mt-16">← Back to dashboard</Link>
+      <Alert style={{ marginBottom: '16px' }}>{error}</Alert>
+      <Button as={Link} to="/dashboard" variant="secondary">← Back to dashboard</Button>
     </main>
   );
   if (!submission) return null;
 
   return (
     <main className="page" style={{ paddingTop: '48px', paddingBottom: '80px', maxWidth: '720px' }}>
-      <Link to="/dashboard" style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '28px' }}>
+      <Link to="/dashboard" style={{ fontSize: 'var(--mero-typography-size-sm)', color: 'var(--mero-colors-text-subtle)', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '28px' }}>
         ← Dashboard
       </Link>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '32px' }}>
         <div>
-          <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', marginBottom: '6px', fontFamily: 'monospace' }}>{submission.trackingId}</p>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.3px' }}>{submission.title}</h1>
-          <p className="text-secondary text-sm mt-8">{CATEGORY_LABELS[submission.category]} · Submitted {new Date(submission.createdAt).toLocaleDateString()}</p>
+          <Text size="sm" subtle style={{ marginBottom: '6px', fontFamily: 'var(--mero-typography-font-mono)' }}>{submission.trackingId}</Text>
+          <Heading level={3}>{submission.title}</Heading>
+          <Text size="sm" subtle style={{ marginTop: '8px' }}>{CATEGORY_LABELS[submission.category]} · Submitted {new Date(submission.createdAt).toLocaleDateString()}</Text>
         </div>
       </div>
 
-      <div className="card mb-24">
-        <h2 style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: '10px' }}>Description</h2>
-        <p style={{ fontSize: '0.9375rem', lineHeight: 1.7 }}>{submission.description}</p>
+      <Card style={{ marginBottom: '24px' }}>
+        <Text size="sm" subtle weight="medium" style={{ marginBottom: '10px' }}>Description</Text>
+        <Text style={{ lineHeight: 1.7 }}>{submission.description}</Text>
         {submission.contactEmail && (
-          <p style={{ marginTop: '14px', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+          <Text size="sm" subtle style={{ marginTop: '14px' }}>
             Contact: <a href={`mailto:${submission.contactEmail}`}>{submission.contactEmail}</a>
-          </p>
+          </Text>
         )}
-      </div>
+      </Card>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {error && <div className="alert alert-error">{error}</div>}
-        {saveSuccess && <div className="alert alert-success">Changes saved successfully.</div>}
+      <Stack gap="20px">
+        {error && <Alert>{error}</Alert>}
+        {saveSuccess && <Alert variant="success">Changes saved successfully.</Alert>}
 
-        <div className="form-group" style={{ marginBottom: 0 }}>
-          <label style={{ fontSize: '0.875rem', fontWeight: 500, marginBottom: '6px', display: 'block' }}>Status</label>
-          <select value={status} onChange={e => setStatus(e.target.value)} style={inputStyle}>
-            {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-        </div>
+        <Select
+          label="Status"
+          options={STATUS_OPTIONS}
+          value={status}
+          onChange={e => setStatus(e.target.value)}
+        />
 
-        <div className="form-group" style={{ marginBottom: 0 }}>
-          <label style={{ fontSize: '0.875rem', fontWeight: 500, marginBottom: '6px', display: 'block' }}>
-            Public response <span style={{ fontWeight: 400, color: 'var(--color-text-secondary)' }}>(visible to citizen)</span>
-          </label>
-          <textarea
-            value={publicResponse}
-            onChange={e => setPublicResponse(e.target.value)}
-            placeholder="Write a response that the citizen will see on the tracking page…"
-            style={{ ...inputStyle, minHeight: '100px', resize: 'vertical' }}
-          />
-        </div>
+        <Textarea
+          label="Public response"
+          hint="Visible to citizen"
+          value={publicResponse}
+          onChange={e => setPublicResponse(e.target.value)}
+          placeholder="Write a response that the citizen will see on the tracking page…"
+        />
 
-        <div className="form-group" style={{ marginBottom: 0 }}>
-          <label style={{ fontSize: '0.875rem', fontWeight: 500, marginBottom: '6px', display: 'block' }}>
-            Internal notes <span style={{ fontWeight: 400, color: 'var(--color-text-secondary)' }}>(not visible to citizen)</span>
-          </label>
-          <textarea
-            value={internalNotes}
-            onChange={e => setInternalNotes(e.target.value)}
-            placeholder="Add internal notes for your team…"
-            style={{ ...inputStyle, minHeight: '100px', resize: 'vertical' }}
-          />
-        </div>
+        <Textarea
+          label="Internal notes"
+          hint="Not visible to citizen"
+          value={internalNotes}
+          onChange={e => setInternalNotes(e.target.value)}
+          placeholder="Add internal notes for your team…"
+        />
 
-        <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ alignSelf: 'flex-start', minWidth: '120px' }}>
+        <Button onClick={handleSave} loading={saving} style={{ alignSelf: 'flex-start', minWidth: '120px' }}>
           {saving ? 'Saving…' : 'Save changes'}
-        </button>
-      </div>
+        </Button>
+      </Stack>
     </main>
   );
 }

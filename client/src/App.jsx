@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import { AuthenticatedTemplate, UnauthenticatedTemplate } from '@azure/msal-react';
+import { Button } from '@mero-nepal/ui';
 import AuthProvider from './auth/AuthProvider';
 import ProtectedRoute from './components/ProtectedRoute';
 import { useAuth } from './auth/useAuth';
@@ -25,22 +26,16 @@ function Nav() {
           <AuthenticatedTemplate>
             <li><NavLink to="/dashboard">Dashboard</NavLink></li>
             <li>
-              <button
-                onClick={logout}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit', color: 'inherit' }}
-              >
+              <Button variant="ghost" size="sm" onClick={logout}>
                 {user?.name ?? 'Sign out'}
-              </button>
+              </Button>
             </li>
           </AuthenticatedTemplate>
           <UnauthenticatedTemplate>
             <li>
-              <button
-                onClick={login}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit', color: 'inherit' }}
-              >
+              <Button variant="ghost" size="sm" onClick={login}>
                 Admin Login
-              </button>
+              </Button>
             </li>
           </UnauthenticatedTemplate>
         </ul>

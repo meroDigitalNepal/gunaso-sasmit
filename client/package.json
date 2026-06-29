@@ -12,6 +12,7 @@
   "dependencies": {
     "@azure/msal-browser": "^5.15.0",
     "@azure/msal-react": "^5.5.0",
+    "@mero-nepal/ui": "^0.1.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.14.0"

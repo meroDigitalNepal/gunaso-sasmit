@@ -1,6 +1,6 @@
 FROM node:22-alpine AS frontend-builder
 WORKDIR /build
-COPY client/package*.json ./
+COPY client/package*.json client/.npmrc ./
 RUN npm ci
 COPY client/ ./
 ARG VITE_ENTRA_CLIENT_ID

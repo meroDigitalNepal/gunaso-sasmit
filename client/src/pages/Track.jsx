@@ -128,7 +128,7 @@ export default function Track() {
 
           {submission.publicResponse && (
             <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--mero-colors-border)' }}>
-              <Text size="xs" subtle style={{ marginBottom: '6px' }}>Response from MP's team</Text>
+              <Text size="xs" subtle style={{ marginBottom: '6px' }}>Response from representative's team</Text>
               <Text size="sm" style={{ lineHeight: 1.6 }}>{submission.publicResponse}</Text>
             </div>
           )}

@@ -1,13 +1,20 @@
 # Gunaso — Civic Feedback Platform
 
-Gunaso is a civic feedback platform where citizens can submit questions and complaints to their local MPs, and MPs' teams can process and respond to them.
+Gunaso is a civic feedback platform where citizens can submit questions and complaints to their **representative** — any elected official, government official, or their secretariat/office team — and that representative's team can process and respond to them. Citizens receive a tracking ID to follow up on a submission without needing an account.
 
 ## Stack
 
-- **Frontend:** React + Vite (deployed on Vercel)
-- **UI:** [`@mero-nepal/ui`](https://www.npmjs.com/package/@mero-nepal/ui) — the shared Mero Digital Nepal design system. The client uses its components and the `mdn-light` theme so it stays visually consistent with the rest of the suite.
-- **Backend:** Node.js + Express (deployed as Vercel Serverless or standalone)
-- **Storage:** JSON file (MVP) — easily swappable to Postgres
+- **Frontend:** React 19 + Vite (deployed on Vercel)
+- **UI:** [`@mero-nepal/ui`](https://www.npmjs.com/package/@mero-nepal/ui) — the shared Mero Digital Nepal design system. The client uses its components and the `safa` theme (Mero's crisp, Apple-inspired light tokens) so it stays visually consistent with the rest of the suite.
+- **Auth:** Microsoft Entra ID (Azure AD) via MSAL — staff/admin sign-in only; citizens submit anonymously.
+- **Backend:** Node.js + Express (deployed as a container or standalone).
+- **Storage:** PostgreSQL with SQL migrations. A JSON-file store is retained for lightweight/local use.
+
+## Architecture
+
+- **Multi-tenant by deployment.** Each representative runs their own deployment. Tenant identity comes from the `MP_ID` env var set per deployment (`server/middleware/tenant.js`), not from the request host. _(The `MP_ID` identifier is historical and represents the representative/office tenant regardless of their title.)_
+- **Role-based access.** Authenticated users carry a role (`staff` < `admin`); staff-only routes require a valid Entra token (`server/middleware/auth.js`).
+- **Dual API paths.** The submissions router is mounted at both `/api/submissions` (local dev — Vite proxies to Express) and `/gunaso/api/submissions` (production, behind the `/gunaso` base path). In production the server also serves the built client from `/gunaso`.
 
 ## Getting Started
 
@@ -23,23 +30,69 @@ npm run dev:server   # http://localhost:3001
 npm run dev:client   # http://localhost:5173
 ```
 
+### Run with Docker
+Brings up Postgres, runs migrations, and starts the server:
+```bash
+docker compose up
+```
+Set `ENTRA_*` and `MP_ID` in `server/.env` (see the comments in `docker-compose.yml`).
+
+### Database migrations
+```bash
+cd server && npm run migrate
+```
+Migrations live in `server/migrations/` (`001_initial_schema.sql`, `002_rename_to_mp.sql`).
+
 ### Run tests
 ```bash
-npm test
+npm test              # runs server tests
+# or
+cd server && npm test
 ```
 
-Server tests can also be run directly:
-```bash
-cd server
-npm test
-```
+## Environment Variables
+
+### Server (`server/.env`)
+| Variable | Description |
+|----------|-------------|
+| `MP_ID` | Tenant identity (the representative/office) for this deployment (required) |
+| `DATABASE_URL` | Postgres connection string |
+| `ENTRA_TENANT_ID` | Microsoft Entra tenant ID (token validation) |
+| `ENTRA_CLIENT_ID` | Entra app/client ID (token audience) |
+| `CORS_ORIGIN` | Allowed origin (e.g. `http://localhost:5173`) |
+| `PORT` | Server port (default `3001`) |
+
+### Client (`client/.env`, `VITE_`-prefixed)
+| Variable | Description |
+|----------|-------------|
+| `VITE_ENTRA_CLIENT_ID` | Entra app/client ID |
+| `VITE_ENTRA_AUTHORITY` | Entra authority URL |
+| `VITE_ENTRA_API_SCOPE` | API scope requested for access tokens |
 
 ## API
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| POST | /api/submissions | Create new submission |
-| GET | /api/submissions | List all submissions |
-| GET | /api/submissions/:id | Get single submission |
-| PATCH | /api/submissions/:id | Update status / add response |
-| GET | /api/submissions/track/:trackingId | Citizen tracking lookup |
+All routes are mounted under both `/api/submissions` (dev) and `/gunaso/api/submissions` (prod).
+
+| Method | Route | Auth | Description |
+|--------|-------|------|-------------|
+| POST | `/api/submissions` | Public | Create a new submission (returns a tracking ID) |
+| GET | `/api/submissions` | Staff | List submissions for the tenant |
+| GET | `/api/submissions/:id` | Staff | Get a single submission |
+| PATCH | `/api/submissions/:id` | Staff | Update status / add a response |
+| GET | `/api/submissions/track/:trackingId` | Public | Citizen tracking lookup |
+
+## Operations
+
+Provisioning helpers live in `infra/`:
+
+- `provision-shared.sh` — set up shared infrastructure
+- `add-mp.sh` — onboard a new representative tenant/deployment
+- `add-staff.sh` — grant a staff member access
+
+## Project Layout
+
+```
+client/   React + Vite frontend (pages, components, auth)
+server/   Express API (routes, middleware, store, migrations)
+infra/    Provisioning scripts
+```

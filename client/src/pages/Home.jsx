@@ -12,10 +12,10 @@ export default function Home() {
         Civic Feedback Platform
       </Text>
       <Heading level={1} style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', letterSpacing: '-1px', lineHeight: 1.1, marginBottom: '20px' }}>
-        Your voice,<br />delivered to your MP.
+        Your voice,<br />delivered to your representative.
       </Heading>
       <Text size="lg" subtle style={{ maxWidth: '500px', margin: '0 auto 40px' }}>
-        Submit questions and complaints to your local MP's team. Track progress. Get answers.
+        Submit questions and complaints to your representative's team. Track progress. Get answers.
       </Text>
       <Stack direction="row" gap="12px" justify="center" wrap>
         <Button as={Link} to="/submit" size="lg">Submit a request</Button>

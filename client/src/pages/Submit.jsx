@@ -139,7 +139,7 @@ export default function Submit() {
   return (
     <main className="page" style={{ paddingTop: '64px', paddingBottom: '80px', maxWidth: '560px' }}>
       <Heading level={1} style={{ marginBottom: '8px' }}>Submit a request</Heading>
-      <Text subtle style={{ marginBottom: '40px' }}>Your MP's team will review and respond to your submission.</Text>
+      <Text subtle style={{ marginBottom: '40px' }}>Your representative's team will review and respond to your submission.</Text>
 
       {error && <Alert style={{ marginBottom: '20px' }}>{error}</Alert>}
 

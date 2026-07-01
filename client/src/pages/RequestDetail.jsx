@@ -73,7 +73,8 @@ export default function RequestDetail() {
   if (!submission) return null;
 
   return (
-    <main className="page" style={{ paddingTop: '48px', paddingBottom: '80px', maxWidth: '720px' }}>
+    <main className="page" style={{ paddingTop: '48px', paddingBottom: '80px' }}>
+      <div style={{ maxWidth: '720px' }}>
       <Link to="/dashboard" style={{ fontSize: 'var(--mero-typography-size-sm)', color: 'var(--mero-colors-text-subtle)', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '28px' }}>
         ← Dashboard
       </Link>
@@ -127,6 +128,7 @@ export default function RequestDetail() {
           {saving ? 'Saving…' : 'Save changes'}
         </Button>
       </Stack>
+      </div>
     </main>
   );
 }

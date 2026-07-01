@@ -4,7 +4,7 @@ Gunaso is a civic feedback platform where citizens can submit questions and comp
 
 ## Stack
 
-- **Frontend:** React 19 + Vite (deployed on Vercel)
+- **Frontend:** React 19 + Vite
 - **UI:** [`@mero-nepal/ui`](https://www.npmjs.com/package/@mero-nepal/ui) — the shared Mero Digital Nepal design system. The client uses its components and the `safa` theme (Mero's crisp, Apple-inspired light tokens) so it stays visually consistent with the rest of the suite.
 - **Auth:** Microsoft Entra ID (Azure AD) via MSAL — staff/admin sign-in only; citizens submit anonymously.
 - **Backend:** Node.js + Express (deployed as a container or standalone).

@@ -60,7 +60,19 @@ cd server && npm test
 | `ENTRA_TENANT_ID` | Microsoft Entra tenant ID (token validation) |
 | `ENTRA_CLIENT_ID` | Entra app/client ID (token audience) |
 | `CORS_ORIGIN` | Allowed origin (e.g. `http://localhost:5173`) |
+| `GRAPH_CLIENT_ID` | Graph mail app client ID (app-only, `Mail.Send`) — same for all MP branches |
+| `GRAPH_CLIENT_SECRET` | Client secret for the Graph mail app |
+| `MAIL_SENDER_ADDRESS` | Mailbox confirmation emails are sent from |
+| `PUBLIC_APP_URL` | Canonical public URL used to build tracking links in emails — set per branch/deployment |
 | `PORT` | Server port (default `3001`) |
+
+Confirmation emails are sent via the Microsoft Graph API using app-only
+(client-credentials) auth — a separate Azure AD app registration from
+`ENTRA_CLIENT_ID`, granted the Graph **Application permission** `Mail.Send`
+with admin consent. Recommend also scoping it to the sender mailbox with an
+Exchange Online Application Access Policy, since `Mail.Send` is tenant-wide
+by default. If the `GRAPH_*`/`MAIL_SENDER_ADDRESS`/`PUBLIC_APP_URL` vars are
+unset, confirmation emails are simply skipped (logged as a warning).
 
 ### Client (`client/.env`, `VITE_`-prefixed)
 | Variable | Description |

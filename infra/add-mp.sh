@@ -30,6 +30,8 @@ RESOURCE_GROUP="gunaso-rg"
 LOCATION="centralindia"
 CONTAINER_ENV="gunaso-env"
 ACR_NAME="gunasoregistry"
+# Shared across all MP branches — one Graph app registration + sender mailbox
+MAIL_SENDER_ADDRESS="noreply@sachivalaya.org"
 # ─────────────────────────────────────────────────────────────────────────────
 
 CONTAINER_APP_NAME="gunaso-${MP}"
@@ -42,7 +44,10 @@ echo ""
 
 read -rp "MP display name (e.g. 'John Doe'): " MP_DISPLAY_NAME
 read -rp "CORS_ORIGIN (e.g. https://${MP}.sachivalaya.org): " CORS_ORIGIN
+read -rp "PUBLIC_APP_URL (e.g. https://${MP}.sachivalaya.org/gunaso): " PUBLIC_APP_URL
 read -rsp "DATABASE_URL (from provision-shared.sh output): " DATABASE_URL
+echo ""
+read -rsp "GRAPH_CLIENT_SECRET (from the gunaso-mail app registration): " GRAPH_CLIENT_SECRET
 echo ""
 echo ""
 
@@ -52,6 +57,7 @@ ACR_USERNAME=$(az acr credential show --name "$ACR_NAME" --query username -o tsv
 ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME" --query "passwords[0].value" -o tsv)
 ENTRA_CLIENT_ID=$(az ad app list --display-name "gunaso" --query "[0].appId" -o tsv)
 ENTRA_TENANT_ID=$(az ad sp show --id "$ENTRA_CLIENT_ID" --query "appOwnerOrganizationId" -o tsv)
+GRAPH_CLIENT_ID=$(az ad app list --display-name "gunaso-mail" --query "[0].appId" -o tsv)
 
 # 1. Seed MP row in database ──────────────────────────────────────────────────
 echo "→ [1/4] Seeding MP in database..."
@@ -90,12 +96,17 @@ az containerapp create \
   --max-replicas 3 \
   --secrets \
     "database-url=${DATABASE_URL}" \
+    "graph-client-secret=${GRAPH_CLIENT_SECRET}" \
   --env-vars \
     "DATABASE_URL=secretref:database-url" \
     "MP_ID=${MP_ID}" \
     "CORS_ORIGIN=${CORS_ORIGIN}" \
+    "PUBLIC_APP_URL=${PUBLIC_APP_URL}" \
     "ENTRA_TENANT_ID=${ENTRA_TENANT_ID}" \
     "ENTRA_CLIENT_ID=${ENTRA_CLIENT_ID}" \
+    "GRAPH_CLIENT_ID=${GRAPH_CLIENT_ID}" \
+    "GRAPH_CLIENT_SECRET=secretref:graph-client-secret" \
+    "MAIL_SENDER_ADDRESS=${MAIL_SENDER_ADDRESS}" \
     "NODE_ENV=production" \
     "PORT=3001" \
   --output none

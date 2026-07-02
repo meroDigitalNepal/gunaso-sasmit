@@ -47,6 +47,19 @@ function createMemoryStore(initialSubmissions = []) {
   };
 }
 
+function createFakeMailer({ throwSync = false, rejectAsync = false } = {}) {
+  const calls = [];
+  return {
+    calls,
+    sendSubmissionConfirmationEmail(args) {
+      calls.push(args);
+      if (throwSync) throw new Error('boom-sync');
+      if (rejectAsync) return Promise.reject(new Error('boom-async'));
+      return Promise.resolve({ sent: true });
+    },
+  };
+}
+
 test('POST /api/submissions creates a new submission with defaults', async () => {
   const store = createMemoryStore();
   const app = createApp(store, { resolveTenantMiddleware: mockTenant });
@@ -68,6 +81,84 @@ test('POST /api/submissions creates a new submission with defaults', async () =>
   assert.equal(response.body.internalNotes, null);
   assert.equal(store.submissions.length, 1);
   assert.equal(store.submissions[0].mpId, MP_ID);
+});
+
+test('POST /api/submissions sends a confirmation email when contactEmail is provided', async () => {
+  const store = createMemoryStore();
+  const mailer = createFakeMailer();
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant, mailer });
+
+  const response = await request(app)
+    .post('/api/submissions')
+    .send({
+      title: 'Broken streetlight',
+      category: 'infrastructure',
+      description: 'The lamp has been off for 2 weeks.',
+      contactEmail: 'citizen@example.com',
+    });
+
+  assert.equal(response.status, 201);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(mailer.calls.length, 1);
+  assert.deepEqual(mailer.calls[0], {
+    to: 'citizen@example.com',
+    title: 'Broken streetlight',
+    trackingId: response.body.trackingId,
+  });
+});
+
+test('POST /api/submissions does not send a confirmation email when contactEmail is absent', async () => {
+  const store = createMemoryStore();
+  const mailer = createFakeMailer();
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant, mailer });
+
+  const response = await request(app)
+    .post('/api/submissions')
+    .send({
+      title: 'Broken streetlight',
+      category: 'infrastructure',
+      description: 'The lamp has been off for 2 weeks.',
+    });
+
+  assert.equal(response.status, 201);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(mailer.calls.length, 0);
+});
+
+test('POST /api/submissions still succeeds when the mailer throws synchronously', async () => {
+  const store = createMemoryStore();
+  const mailer = createFakeMailer({ throwSync: true });
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant, mailer });
+
+  const response = await request(app)
+    .post('/api/submissions')
+    .send({
+      title: 'Broken streetlight',
+      category: 'infrastructure',
+      description: 'The lamp has been off for 2 weeks.',
+      contactEmail: 'citizen@example.com',
+    });
+
+  assert.equal(response.status, 201);
+  assert.equal(store.submissions.length, 1);
+});
+
+test('POST /api/submissions still succeeds when the mailer rejects asynchronously', async () => {
+  const store = createMemoryStore();
+  const mailer = createFakeMailer({ rejectAsync: true });
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant, mailer });
+
+  const response = await request(app)
+    .post('/api/submissions')
+    .send({
+      title: 'Broken streetlight',
+      category: 'infrastructure',
+      description: 'The lamp has been off for 2 weeks.',
+      contactEmail: 'citizen@example.com',
+    });
+
+  assert.equal(response.status, 201);
+  assert.equal(store.submissions.length, 1);
 });
 
 test('POST /api/submissions rejects invalid categories before writing', async () => {

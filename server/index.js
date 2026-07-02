@@ -8,7 +8,7 @@ const { resolveTenant } = require('./middleware/tenant');
 
 const STATIC_DIR = path.join(__dirname, 'public', 'gunaso');
 
-function createApp(store = defaultStore, { resolveTenantMiddleware = resolveTenant } = {}) {
+function createApp(store = defaultStore, { resolveTenantMiddleware = resolveTenant, mailer } = {}) {
   const app = express();
 
   app.use(cors({
@@ -17,7 +17,7 @@ function createApp(store = defaultStore, { resolveTenantMiddleware = resolveTena
   }));
   app.use(express.json());
 
-  const submissionsRouter = createSubmissionsRouter(store, { resolveTenantMiddleware });
+  const submissionsRouter = createSubmissionsRouter(store, { resolveTenantMiddleware, mailer });
   // /gunaso/api — production path (browser → Container App at full URL)
   // /api        — local dev path (Vite dev server → Express directly on port 3001)
   app.use('/gunaso/api/submissions', submissionsRouter);

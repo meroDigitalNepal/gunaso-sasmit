@@ -3,11 +3,12 @@ const { v4: uuidv4 } = require('uuid');
 const defaultStore = require('../store/submissionsStore');
 const { resolveTenant } = require('../middleware/tenant');
 const { requireAuth, requireRole } = require('../middleware/auth');
+const defaultMailer = require('../utils/mailer');
 
 const CATEGORIES = ['infrastructure', 'health', 'education', 'security', 'other'];
 const STATUSES = ['new', 'in_review', 'resolved'];
 
-function createSubmissionsRouter(store = defaultStore, { resolveTenantMiddleware = resolveTenant } = {}) {
+function createSubmissionsRouter(store = defaultStore, { resolveTenantMiddleware = resolveTenant, mailer = defaultMailer } = {}) {
   const router = express.Router();
 
   // POST /api/submissions — public: any citizen can submit
@@ -39,6 +40,19 @@ function createSubmissionsRouter(store = defaultStore, { resolveTenantMiddleware
     try {
       const created = await store.create(req.mp.id, submission);
       res.status(201).json(created);
+
+      if (created.contactEmail) {
+        // Fire-and-forget, wrapped so even a synchronous throw from the mailer
+        // becomes a rejection instead of bubbling into this try/catch — headers
+        // are already sent above, so a second res.status() call would crash.
+        Promise.resolve()
+          .then(() => mailer.sendSubmissionConfirmationEmail({
+            to: created.contactEmail,
+            title: created.title,
+            trackingId: created.trackingId,
+          }))
+          .catch((err) => console.error('[submissions] Failed to send confirmation email:', err.message));
+      }
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

@@ -14,12 +14,12 @@ function buildConfirmationHtml({ title, trackingId, trackingUrl, mpName }) {
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;">
       <tr>
         <td align="center">
-          <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;padding:32px;">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;padding:32px;">
             <tr>
               <td>
                 <h2 style="margin:0 0 12px;color:#111827;">Namaste,</h2>
                 <p style="margin:0 0 16px;color:#4b5563;line-height:1.5;">
-                  Thank you for taking the time to reach out. We've received your request${title ? ` about "${title}"` : ''}, and ${office} will look into it and get back to you soon.
+                  Thank you for taking the time to reach out. We've received your Gunaso${title ? ` about "${title}"` : ''}, and ${office} will look into it and get back to you soon.
                 </p>
                 <p style="margin:0 0 20px;color:#4b5563;line-height:1.5;">
                   You can check on its progress anytime using the tracking ID below.
@@ -35,12 +35,12 @@ function buildConfirmationHtml({ title, trackingId, trackingUrl, mpName }) {
                 <table role="presentation" cellpadding="0" cellspacing="0">
                   <tr>
                     <td style="border-radius:6px;background:#2563eb;">
-                      <a href="${trackingUrl}" style="display:inline-block;padding:12px 24px;color:#ffffff;text-decoration:none;font-weight:bold;">Track My Request</a>
+                      <a href="${trackingUrl}" style="display:inline-block;padding:12px 24px;color:#ffffff;text-decoration:none;font-weight:bold;">Track My Gunaso</a>
                     </td>
                   </tr>
                 </table>
-                <p style="margin:24px 0 0;color:#9ca3af;font-size:13px;line-height:1.5;">
-                  Thank you for helping us serve you better. This message was sent via Sachivalaya on behalf of ${office}.
+                <p style="margin:28px 0 0;padding-top:16px;border-top:1px solid #e5e7eb;color:#b0b7c3;font-size:12px;line-height:1.5;">
+                  Sent via Sachivalaya, on behalf of ${office}.
                 </p>
               </td>
             </tr>

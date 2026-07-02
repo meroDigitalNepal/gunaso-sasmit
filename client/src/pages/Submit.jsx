@@ -48,7 +48,7 @@ export default function Submit() {
       <main className="page" style={{ paddingTop: '80px', paddingBottom: '80px', maxWidth: '560px' }}>
         <Card style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '16px' }}>✓</div>
-          <Heading level={3} style={{ marginBottom: '8px' }}>Request submitted</Heading>
+          <Heading level={3} style={{ marginBottom: '8px' }}>Gunaso submitted</Heading>
           <Text subtle style={{ marginBottom: '24px' }}>Save your tracking ID to check on progress.</Text>
           <div style={{
             background: 'var(--mero-colors-surface)',
@@ -128,7 +128,7 @@ export default function Submit() {
             </div>
           </div>
           <Stack direction="row" gap="12px" justify="center" wrap>
-            <Button as={Link} to={`/track/${result.trackingId}`}>Track this request</Button>
+            <Button as={Link} to={`/track/${result.trackingId}`}>Track this Gunaso</Button>
             <Button variant="secondary" onClick={() => setResult(null)}>Submit another</Button>
           </Stack>
         </Card>
@@ -138,7 +138,7 @@ export default function Submit() {
 
   return (
     <main className="page" style={{ paddingTop: '64px', paddingBottom: '80px', maxWidth: '560px' }}>
-      <Heading level={1} style={{ marginBottom: '8px' }}>Submit a request</Heading>
+      <Heading level={1} style={{ marginBottom: '8px' }}>Submit a Gunaso</Heading>
       <Text subtle style={{ marginBottom: '40px' }}>Your representative's team will review and respond to your submission.</Text>
 
       {error && <Alert style={{ marginBottom: '20px' }}>{error}</Alert>}
@@ -147,7 +147,7 @@ export default function Submit() {
         <Stack gap="20px">
           <Input
             label="Title" name="title"
-            placeholder="Brief summary of your request"
+            placeholder="Brief summary of your Gunaso"
             value={form.title} onChange={handleChange} required
           />
 
@@ -160,7 +160,7 @@ export default function Submit() {
 
           <Textarea
             label="Description" name="description"
-            placeholder="Describe your request in detail"
+            placeholder="Describe your Gunaso in detail"
             value={form.description} onChange={handleChange} required
           />
 
@@ -168,11 +168,11 @@ export default function Submit() {
             label="Contact email" name="contactEmail" type="email"
             placeholder="you@example.com"
             value={form.contactEmail} onChange={handleChange}
-            hint="We'll only use this to follow up on your request."
+            hint="We'll only use this to follow up on your Gunaso."
           />
 
           <Button type="submit" loading={loading} style={{ width: '100%' }}>
-            {loading ? 'Submitting…' : 'Submit request'}
+            {loading ? 'Submitting…' : 'Submit Gunaso'}
           </Button>
         </Stack>
       </form>

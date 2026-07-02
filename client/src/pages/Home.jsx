@@ -18,8 +18,8 @@ export default function Home() {
         Submit questions and complaints to your representative's team. Track progress. Get answers.
       </Text>
       <Stack direction="row" gap="12px" justify="center" wrap>
-        <Button as={Link} to="/submit" size="lg">Submit a request</Button>
-        <Button as={Link} to="/track" variant="secondary" size="lg">Track my request</Button>
+        <Button as={Link} to="/submit" size="lg">Submit a Gunaso</Button>
+        <Button as={Link} to="/track" variant="secondary" size="lg">Track my Gunaso</Button>
       </Stack>
     </main>
   );

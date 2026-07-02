@@ -84,7 +84,7 @@ export default function Track() {
 
   return (
     <main className="page" style={{ paddingTop: '64px', paddingBottom: '80px', maxWidth: '640px' }}>
-      <Heading level={1} style={{ marginBottom: '8px' }}>Track your request</Heading>
+      <Heading level={1} style={{ marginBottom: '8px' }}>Track your Gunaso</Heading>
       <Text subtle style={{ marginBottom: '40px' }}>Enter your tracking ID to see the current status.</Text>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '40px' }}>

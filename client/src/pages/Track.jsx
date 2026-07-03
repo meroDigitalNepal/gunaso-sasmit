@@ -126,6 +126,18 @@ export default function Track() {
             <Text size="sm" style={{ lineHeight: 1.6 }}>{submission.description}</Text>
           </div>
 
+          {submission.attachmentFileName && (
+            <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--mero-colors-border)' }}>
+              <Text size="xs" subtle style={{ marginBottom: '6px' }}>Attachment</Text>
+              <a
+                href={api.getTrackingAttachmentUrl(submission.trackingId)}
+                style={{ fontSize: 'var(--mero-typography-size-sm)', color: 'var(--mero-colors-primary)' }}
+              >
+                {submission.attachmentFileName}
+              </a>
+            </div>
+          )}
+
           {submission.publicResponse && (
             <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--mero-colors-border)' }}>
               <Text size="xs" subtle style={{ marginBottom: '6px' }}>Response from representative's team</Text>

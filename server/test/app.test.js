@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('path');
+const { Readable } = require('stream');
 const request = require('supertest');
 const rateLimit = require('express-rate-limit');
 
@@ -283,6 +284,106 @@ test('GET /api/submissions/track/:trackingId hides internal-only fields', async 
   assert.equal(response.body.publicResponse, 'Case closed.');
   assert.equal(response.body.contactEmail, undefined);
   assert.equal(response.body.internalNotes, undefined);
+});
+
+test('GET /api/submissions/track/:trackingId includes the attachment file name but not its storage details', async () => {
+  const store = createMemoryStore([
+    {
+      id: 'abc-123',
+      trackingId: 'GUN-WITHFILE',
+      mpId: MP_ID,
+      title: 'Pothole',
+      category: 'infrastructure',
+      description: 'desc',
+      contactEmail: null,
+      status: 'new',
+      createdAt: '2026-03-01T00:00:00.000Z',
+      updatedAt: '2026-03-01T00:00:00.000Z',
+      publicResponse: null,
+      internalNotes: null,
+      attachmentFileName: 'photo.jpg',
+      attachmentContentType: 'image/jpeg',
+      attachmentSizeBytes: 1234,
+      attachmentBlobPath: 'clinic/abc-123/uuid-photo.jpg',
+    },
+  ]);
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant });
+
+  const response = await request(app).get('/api/submissions/track/gun-withfile');
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.attachmentFileName, 'photo.jpg');
+  assert.equal(response.body.attachmentBlobPath, undefined, 'internal blob path must never be exposed publicly');
+  assert.equal(response.body.attachmentContentType, undefined);
+});
+
+test('GET /api/submissions/track/:trackingId/attachment streams the file for a valid tracking ID', async () => {
+  const store = createMemoryStore([
+    {
+      id: 'abc-123',
+      trackingId: 'GUN-WITHFILE',
+      mpId: MP_ID,
+      title: 'Pothole',
+      category: 'infrastructure',
+      description: 'desc',
+      contactEmail: null,
+      status: 'new',
+      createdAt: '2026-03-01T00:00:00.000Z',
+      updatedAt: '2026-03-01T00:00:00.000Z',
+      publicResponse: null,
+      internalNotes: null,
+      attachmentFileName: 'photo.jpg',
+      attachmentContentType: 'image/jpeg',
+      attachmentSizeBytes: 1234,
+      attachmentBlobPath: 'clinic/abc-123/uuid-photo.jpg',
+    },
+  ]);
+  const blobStorage = {
+    async streamAttachment() {
+      return Readable.from([Buffer.from('fake-image-bytes')]);
+    },
+  };
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant, blobStorage });
+
+  const response = await request(app).get('/api/submissions/track/gun-withfile/attachment');
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers['content-type'], 'image/jpeg');
+  assert.match(response.headers['content-disposition'], /photo\.jpg/);
+  assert.equal(response.body.toString(), 'fake-image-bytes');
+});
+
+test('GET /api/submissions/track/:trackingId/attachment 404s when the submission has no attachment', async () => {
+  const store = createMemoryStore([
+    {
+      id: 'abc-123',
+      trackingId: 'GUN-NOFILE',
+      mpId: MP_ID,
+      title: 'Pothole',
+      category: 'infrastructure',
+      description: 'desc',
+      contactEmail: null,
+      status: 'new',
+      createdAt: '2026-03-01T00:00:00.000Z',
+      updatedAt: '2026-03-01T00:00:00.000Z',
+      publicResponse: null,
+      internalNotes: null,
+    },
+  ]);
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant });
+
+  const response = await request(app).get('/api/submissions/track/gun-nofile/attachment');
+
+  assert.equal(response.status, 404);
+});
+
+test('GET /api/submissions/track/:trackingId/attachment 404s for an unknown tracking ID', async () => {
+  const store = createMemoryStore();
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant });
+
+  const response = await request(app).get('/api/submissions/track/does-not-exist/attachment');
+
+  assert.equal(response.status, 404);
 });
 
 test('PATCH /api/submissions/:id is protected and returns 401 without a token', async () => {

@@ -32,6 +32,16 @@ const upload = multer({
   },
 });
 
+async function streamSubmissionAttachment(res, submission, blobStorage) {
+  if (!submission || !submission.attachmentBlobPath) {
+    return res.status(404).json({ error: 'Attachment not found' });
+  }
+  const stream = await blobStorage.streamAttachment(submission.attachmentBlobPath);
+  res.set('Content-Type', submission.attachmentContentType);
+  res.attachment(submission.attachmentFileName);
+  stream.pipe(res);
+}
+
 function createSubmissionsRouter(store = defaultStore, {
   resolveTenantMiddleware = resolveTenant,
   mailer = defaultMailer,
@@ -180,8 +190,24 @@ function createSubmissionsRouter(store = defaultStore, {
       );
       if (!submission) return res.status(404).json({ error: 'Submission not found' });
 
-      const { id, trackingId, title, category, description, status, createdAt, updatedAt, publicResponse } = submission;
-      res.json({ id, trackingId, title, category, description, status, createdAt, updatedAt, publicResponse });
+      const { id, trackingId, title, category, description, status, createdAt, updatedAt, publicResponse, attachmentFileName } = submission;
+      res.json({ id, trackingId, title, category, description, status, createdAt, updatedAt, publicResponse, attachmentFileName });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/submissions/track/:trackingId/attachment — public: the citizen's
+  // own attachment. No auth beyond knowing the tracking ID — same trust
+  // model already used for the rest of the track response (title,
+  // description, status, publicResponse are all accessible this way too).
+  router.get('/track/:trackingId/attachment', resolveTenantMiddleware, async (req, res) => {
+    try {
+      const submission = await store.getByTrackingId(
+        req.mp.id,
+        req.params.trackingId.toUpperCase(),
+      );
+      await streamSubmissionAttachment(res, submission, blobStorage);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -202,14 +228,7 @@ function createSubmissionsRouter(store = defaultStore, {
   router.get('/:id/attachment', resolveTenantMiddleware, requireAuth, requireRole('staff'), async (req, res) => {
     try {
       const submission = await store.getById(req.mp.id, req.params.id);
-      if (!submission || !submission.attachmentBlobPath) {
-        return res.status(404).json({ error: 'Attachment not found' });
-      }
-
-      const stream = await blobStorage.streamAttachment(submission.attachmentBlobPath);
-      res.set('Content-Type', submission.attachmentContentType);
-      res.attachment(submission.attachmentFileName);
-      stream.pipe(res);
+      await streamSubmissionAttachment(res, submission, blobStorage);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

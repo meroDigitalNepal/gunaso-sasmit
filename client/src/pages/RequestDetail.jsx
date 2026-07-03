@@ -27,10 +27,39 @@ export default function RequestDetail() {
   const [publicResponse, setPublicResponse] = useState('');
   const [internalNotes, setInternalNotes] = useState('');
   const [downloadError, setDownloadError] = useState(null);
+  const [attachmentPreviewUrl, setAttachmentPreviewUrl] = useState(null);
 
   useEffect(() => {
     fetchSubmission();
   }, [id]);
+
+  // Images and PDFs can be previewed inline with no extra infrastructure —
+  // just render the blob directly. DOC/DOCX has no good inline preview
+  // option without either a public URL or a heavy third-party viewer, so
+  // those stay download-only.
+  useEffect(() => {
+    const isPreviewable = submission?.attachmentContentType?.startsWith('image/')
+      || submission?.attachmentContentType === 'application/pdf';
+    if (!isPreviewable) {
+      setAttachmentPreviewUrl(null);
+      return;
+    }
+
+    let cancelled = false;
+    let objectUrl;
+    api.getAttachmentBlob(id).then((blob) => {
+      if (cancelled) return;
+      objectUrl = URL.createObjectURL(blob);
+      setAttachmentPreviewUrl(objectUrl);
+    }).catch(() => {
+      // Preview is best-effort — the download button below still works.
+    });
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [id, submission?.attachmentContentType]);
 
   async function fetchSubmission() {
     setLoading(true);
@@ -115,6 +144,20 @@ export default function RequestDetail() {
         )}
         {submission.attachmentFileName && (
           <div style={{ marginTop: '14px' }}>
+            {attachmentPreviewUrl && submission.attachmentContentType.startsWith('image/') && (
+              <img
+                src={attachmentPreviewUrl}
+                alt={submission.attachmentFileName}
+                style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: 'var(--mero-radii-md)', display: 'block', marginBottom: '10px' }}
+              />
+            )}
+            {attachmentPreviewUrl && submission.attachmentContentType === 'application/pdf' && (
+              <iframe
+                src={attachmentPreviewUrl}
+                title={submission.attachmentFileName}
+                style={{ width: '100%', height: '500px', border: '1px solid var(--mero-colors-border)', borderRadius: 'var(--mero-radii-md)', marginBottom: '10px' }}
+              />
+            )}
             <Button variant="secondary" onClick={handleDownloadAttachment}>
               Download attachment ({submission.attachmentFileName})
             </Button>

@@ -79,4 +79,6 @@ export const api = {
   getSubmission: (id) => request('GET', `/api/submissions/${id}`),
   updateSubmission: (id, body) => request('PATCH', `/api/submissions/${id}`, body),
   trackSubmission: (trackingId) => request('GET', `/api/submissions/track/${trackingId}`),
+  // Public endpoint — no auth needed, so a plain URL works directly in an <a href>.
+  getTrackingAttachmentUrl: (trackingId) => `${BASE}/api/submissions/track/${trackingId}/attachment`,
 };

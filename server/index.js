@@ -8,8 +8,13 @@ const { resolveTenant } = require('./middleware/tenant');
 
 const STATIC_DIR = path.join(__dirname, 'public', 'gunaso');
 
-function createApp(store = defaultStore, { resolveTenantMiddleware = resolveTenant, mailer } = {}) {
+function createApp(store = defaultStore, { resolveTenantMiddleware = resolveTenant, mailer, submissionRateLimit, turnstileVerifier } = {}) {
   const app = express();
+
+  // Azure Container Apps sits in front as a reverse proxy — trust exactly
+  // one hop so express-rate-limit reads the real client IP from
+  // X-Forwarded-For instead of the proxy's own IP.
+  app.set('trust proxy', 1);
 
   app.use(cors({
     origin: process.env.CORS_ORIGIN || '*',
@@ -17,7 +22,7 @@ function createApp(store = defaultStore, { resolveTenantMiddleware = resolveTena
   }));
   app.use(express.json());
 
-  const submissionsRouter = createSubmissionsRouter(store, { resolveTenantMiddleware, mailer });
+  const submissionsRouter = createSubmissionsRouter(store, { resolveTenantMiddleware, mailer, submissionRateLimit, turnstileVerifier });
   // /gunaso/api — production path (browser → Container App at full URL)
   // /api        — local dev path (Vite dev server → Express directly on port 3001)
   app.use('/gunaso/api/submissions', submissionsRouter);

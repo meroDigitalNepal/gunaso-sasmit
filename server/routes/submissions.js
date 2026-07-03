@@ -3,23 +3,35 @@ const { v4: uuidv4 } = require('uuid');
 const defaultStore = require('../store/submissionsStore');
 const { resolveTenant } = require('../middleware/tenant');
 const { requireAuth, requireRole } = require('../middleware/auth');
+const { submissionRateLimit: defaultSubmissionRateLimit } = require('../middleware/rateLimit');
 const defaultMailer = require('../utils/mailer');
+const defaultTurnstileVerifier = require('../utils/turnstile');
 
 const CATEGORIES = ['infrastructure', 'health', 'education', 'security', 'other'];
 const STATUSES = ['new', 'in_review', 'resolved'];
 
-function createSubmissionsRouter(store = defaultStore, { resolveTenantMiddleware = resolveTenant, mailer = defaultMailer } = {}) {
+function createSubmissionsRouter(store = defaultStore, {
+  resolveTenantMiddleware = resolveTenant,
+  mailer = defaultMailer,
+  submissionRateLimit = defaultSubmissionRateLimit,
+  turnstileVerifier = defaultTurnstileVerifier,
+} = {}) {
   const router = express.Router();
 
   // POST /api/submissions — public: any citizen can submit
-  router.post('/', resolveTenantMiddleware, async (req, res) => {
-    const { title, category, description, contactEmail } = req.body;
+  router.post('/', submissionRateLimit, resolveTenantMiddleware, async (req, res) => {
+    const { title, category, description, contactEmail, turnstileToken } = req.body;
 
     if (!title || !category || !description) {
       return res.status(400).json({ error: 'title, category, and description are required' });
     }
     if (!CATEGORIES.includes(category)) {
       return res.status(400).json({ error: `category must be one of: ${CATEGORIES.join(', ')}` });
+    }
+
+    const captchaValid = await turnstileVerifier.verifyToken(turnstileToken, req.ip);
+    if (!captchaValid) {
+      return res.status(400).json({ error: 'CAPTCHA verification failed' });
     }
 
     const now = new Date().toISOString();

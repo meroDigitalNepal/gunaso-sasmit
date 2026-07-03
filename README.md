@@ -65,6 +65,7 @@ cd server && npm test
 | `GRAPH_CLIENT_SECRET` | Client secret for the Graph mail app |
 | `MAIL_SENDER_ADDRESS` | Mailbox confirmation emails are sent from |
 | `PUBLIC_APP_URL` | Canonical public URL used to build tracking links in emails — set per branch/deployment |
+| `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret key, verifies the CAPTCHA on submission — same for all MP branches |
 | `PORT` | Server port (default `3001`) |
 
 Confirmation emails are sent via the Microsoft Graph API using app-only
@@ -75,12 +76,21 @@ Exchange Online Application Access Policy, since `Mail.Send` is tenant-wide
 by default. If the `GRAPH_*`/`MAIL_SENDER_ADDRESS`/`PUBLIC_APP_URL` vars are
 unset, confirmation emails are simply skipped (logged as a warning).
 
+`POST /api/submissions` is also rate limited (8 requests per IP per hour) and
+requires a valid Cloudflare Turnstile CAPTCHA token. If `TURNSTILE_SECRET_KEY`
+is unset, CAPTCHA verification is skipped (logged as a warning) — safe for
+local dev. The mailer additionally has a circuit breaker: after 3 consecutive
+send failures it stops attempting new sends for 60 seconds, then allows one
+trial send before resuming normally — this protects the shared Graph mailbox
+quota from being burned by a sustained outage or abuse burst.
+
 ### Client (`client/.env`, `VITE_`-prefixed)
 | Variable | Description |
 |----------|-------------|
 | `VITE_ENTRA_CLIENT_ID` | Entra app/client ID |
 | `VITE_ENTRA_AUTHORITY` | Entra authority URL |
 | `VITE_ENTRA_API_SCOPE` | API scope requested for access tokens |
+| `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile public site key, baked in at build time |
 
 ## API
 

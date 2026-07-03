@@ -57,6 +57,15 @@ function buildConfirmationHtml({ title, trackingId, trackingUrl, mpName }) {
 // submissions at once) queue briefly in-process rather than getting throttled.
 const DEFAULT_MAX_CONCURRENT_SENDS = 3;
 const DEFAULT_MAX_ATTEMPTS = 3;
+const DEFAULT_REQUEST_TIMEOUT_MS = 15_000;
+
+// Circuit breaker: a failure only reaches this layer after postToGraph has
+// already exhausted its own retry loop, so it's a pre-filtered signal, not
+// raw noise — a low threshold is appropriate. 1 minute comfortably clears a
+// throttling-driven trip (Graph's Retry-After is typically seconds-to-tens
+// of seconds) without excessive delay to legitimate senders.
+const DEFAULT_FAILURE_THRESHOLD = 3;
+const DEFAULT_COOLDOWN_MS = 60_000;
 
 function createMailer({
   fetchImpl = fetch,
@@ -64,8 +73,12 @@ function createMailer({
   senderAddress = process.env.MAIL_SENDER_ADDRESS,
   publicAppUrl = process.env.PUBLIC_APP_URL,
   sleepImpl = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  now = () => Date.now(),
   maxConcurrentSends = DEFAULT_MAX_CONCURRENT_SENDS,
   maxAttempts = DEFAULT_MAX_ATTEMPTS,
+  requestTimeoutMs = DEFAULT_REQUEST_TIMEOUT_MS,
+  failureThreshold = DEFAULT_FAILURE_THRESHOLD,
+  cooldownMs = DEFAULT_COOLDOWN_MS,
 } = {}) {
   const enabled = Boolean(msalApp && senderAddress && publicAppUrl);
   if (!enabled) {
@@ -89,16 +102,72 @@ function createMailer({
     if (next) next();
   }
 
+  // Circuit breaker state — in-memory, per-process (same assumption the
+  // semaphore above already makes). Revisit if this ever runs as multiple
+  // replicas behind a load balancer.
+  let circuitState = 'closed'; // 'closed' | 'open' | 'half-open'
+  let consecutiveFailures = 0;
+  let openedAt = null;
+  let halfOpenInFlight = false;
+
+  // Synchronous — no await inside, so under Node's event loop two
+  // "concurrent" callers can never interleave the open→half-open transition
+  // and the halfOpenInFlight reservation; one call's synchronous prefix
+  // always finishes before another callback runs.
+  function tryEnterCircuit() {
+    if (circuitState === 'open') {
+      if (now() - openedAt >= cooldownMs) {
+        circuitState = 'half-open';
+      } else {
+        return { proceed: false };
+      }
+    }
+    if (circuitState === 'half-open') {
+      if (halfOpenInFlight) return { proceed: false };
+      halfOpenInFlight = true;
+    }
+    return { proceed: true };
+  }
+
+  function recordSuccess() {
+    circuitState = 'closed';
+    consecutiveFailures = 0;
+    openedAt = null;
+    halfOpenInFlight = false;
+  }
+
+  function recordFailure() {
+    consecutiveFailures += 1;
+    if (circuitState === 'half-open' || consecutiveFailures >= failureThreshold) {
+      circuitState = 'open';
+      openedAt = now();
+    }
+    halfOpenInFlight = false;
+  }
+
   async function postToGraph(accessToken, message) {
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-      const response = await fetchImpl(graphSendMailUrl(senderAddress), {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message, saveToSentItems: false }),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
+      let response;
+      try {
+        response = await fetchImpl(graphSendMailUrl(senderAddress), {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message, saveToSentItems: false }),
+          signal: controller.signal,
+        });
+      } catch (err) {
+        // Network error or timeout — retryable like a 5xx.
+        if (attempt === maxAttempts) throw new Error(`Graph sendMail failed: network error (${err.message})`);
+        await sleepImpl(attempt * 1000);
+        continue;
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (response.ok) return;
 
@@ -119,6 +188,9 @@ function createMailer({
   async function sendSubmissionConfirmationEmail({ to, title, trackingId, mpName }) {
     if (!enabled || !to) return { sent: false };
 
+    const gate = tryEnterCircuit();
+    if (!gate.proceed) return { sent: false, circuitOpen: true };
+
     const trackingUrl = `${publicAppUrl.replace(/\/$/, '')}/track/${trackingId}`;
 
     await acquire();
@@ -131,7 +203,11 @@ function createMailer({
         body: { contentType: 'HTML', content: buildConfirmationHtml({ title, trackingId, trackingUrl, mpName }) },
         toRecipients: [{ emailAddress: { address: to } }],
       });
+      recordSuccess();
       return { sent: true };
+    } catch (err) {
+      recordFailure();
+      throw err;
     } finally {
       release();
     }

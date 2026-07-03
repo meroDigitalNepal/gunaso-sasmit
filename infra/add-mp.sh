@@ -49,6 +49,8 @@ read -rsp "DATABASE_URL (from provision-shared.sh output): " DATABASE_URL
 echo ""
 read -rsp "GRAPH_CLIENT_SECRET (from the gunaso-mail app registration): " GRAPH_CLIENT_SECRET
 echo ""
+read -rsp "TURNSTILE_SECRET_KEY (from the Cloudflare Turnstile dashboard): " TURNSTILE_SECRET_KEY
+echo ""
 echo ""
 
 # Look up shared values from Azure
@@ -97,6 +99,7 @@ az containerapp create \
   --secrets \
     "database-url=${DATABASE_URL}" \
     "graph-client-secret=${GRAPH_CLIENT_SECRET}" \
+    "turnstile-secret-key=${TURNSTILE_SECRET_KEY}" \
   --env-vars \
     "DATABASE_URL=secretref:database-url" \
     "MP_ID=${MP_ID}" \
@@ -108,6 +111,7 @@ az containerapp create \
     "GRAPH_CLIENT_ID=${GRAPH_CLIENT_ID}" \
     "GRAPH_CLIENT_SECRET=secretref:graph-client-secret" \
     "MAIL_SENDER_ADDRESS=${MAIL_SENDER_ADDRESS}" \
+    "TURNSTILE_SECRET_KEY=secretref:turnstile-secret-key" \
     "NODE_ENV=production" \
     "PORT=3001" \
   --output none

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Heading, Text, Button, Card, Input, Select, Textarea, Stack } from '@mero-nepal/ui';
 import Alert from '../components/Alert';
@@ -12,12 +12,51 @@ const CATEGORIES = [
   { value: 'other', label: 'Other' },
 ];
 
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+const TURNSTILE_SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+
 export default function Submit() {
   const [form, setForm] = useState({ title: '', category: '', description: '', contactEmail: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState(null);
+  const turnstileRef = useRef(null);
+
+  // Loads the Turnstile script once and renders the widget into turnstileRef.
+  // No-ops entirely if VITE_TURNSTILE_SITE_KEY isn't set, so local dev without
+  // a Cloudflare key still works — mirrors the server's graceful degrade when
+  // TURNSTILE_SECRET_KEY is unset.
+  useEffect(() => {
+    if (!TURNSTILE_SITE_KEY) return;
+
+    function renderWidget() {
+      if (turnstileRef.current && window.turnstile) {
+        window.turnstile.render(turnstileRef.current, {
+          sitekey: TURNSTILE_SITE_KEY,
+          callback: (token) => setTurnstileToken(token),
+          'expired-callback': () => setTurnstileToken(null),
+        });
+      }
+    }
+
+    if (window.turnstile) {
+      renderWidget();
+      return;
+    }
+
+    let script = document.querySelector(`script[src="${TURNSTILE_SCRIPT_SRC}"]`);
+    if (!script) {
+      script = document.createElement('script');
+      script.src = TURNSTILE_SCRIPT_SRC;
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+    script.addEventListener('load', renderWidget);
+    return () => script.removeEventListener('load', renderWidget);
+  }, []);
 
   function handleChange(e) {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
@@ -34,7 +73,7 @@ export default function Submit() {
     setError(null);
     setLoading(true);
     try {
-      const submission = await api.createSubmission(form);
+      const submission = await api.createSubmission({ ...form, turnstileToken });
       setResult(submission);
     } catch (err) {
       setError(err.message);
@@ -171,7 +210,14 @@ export default function Submit() {
             hint="We'll only use this to follow up on your Gunaso."
           />
 
-          <Button type="submit" loading={loading} style={{ width: '100%' }}>
+          {TURNSTILE_SITE_KEY && <div ref={turnstileRef} />}
+
+          <Button
+            type="submit"
+            loading={loading}
+            disabled={Boolean(TURNSTILE_SITE_KEY) && !turnstileToken}
+            style={{ width: '100%' }}
+          >
             {loading ? 'Submitting…' : 'Submit Gunaso'}
           </Button>
         </Stack>

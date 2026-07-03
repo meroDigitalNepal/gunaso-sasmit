@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
+const rateLimit = require('express-rate-limit');
 
 const createApp = require('../index');
 
@@ -10,6 +11,18 @@ const MP_ID = 'test-parliamentarian-id';
 function mockTenant(req, res, next) {
   req.mp = { id: MP_ID, name: 'Test MP', subdomain: 'test' };
   next();
+}
+
+// Default DI overrides for tests that aren't specifically exercising rate
+// limiting or CAPTCHA — the real submissionRateLimit is a module-level
+// singleton (shared across every createApp() call that doesn't override it),
+// so using it unmodified here would let unrelated tests' request counts
+// accumulate against each other.
+function noOpRateLimit(req, res, next) {
+  next();
+}
+function alwaysAllowTurnstile() {
+  return { verifyToken: async () => true };
 }
 
 function createMemoryStore(initialSubmissions = []) {
@@ -62,7 +75,7 @@ function createFakeMailer({ throwSync = false, rejectAsync = false } = {}) {
 
 test('POST /api/submissions creates a new submission with defaults', async () => {
   const store = createMemoryStore();
-  const app = createApp(store, { resolveTenantMiddleware: mockTenant });
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant, submissionRateLimit: noOpRateLimit, turnstileVerifier: alwaysAllowTurnstile() });
 
   const response = await request(app)
     .post('/api/submissions')
@@ -86,7 +99,7 @@ test('POST /api/submissions creates a new submission with defaults', async () =>
 test('POST /api/submissions sends a confirmation email when contactEmail is provided', async () => {
   const store = createMemoryStore();
   const mailer = createFakeMailer();
-  const app = createApp(store, { resolveTenantMiddleware: mockTenant, mailer });
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant, mailer, submissionRateLimit: noOpRateLimit, turnstileVerifier: alwaysAllowTurnstile() });
 
   const response = await request(app)
     .post('/api/submissions')
@@ -111,7 +124,7 @@ test('POST /api/submissions sends a confirmation email when contactEmail is prov
 test('POST /api/submissions does not send a confirmation email when contactEmail is absent', async () => {
   const store = createMemoryStore();
   const mailer = createFakeMailer();
-  const app = createApp(store, { resolveTenantMiddleware: mockTenant, mailer });
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant, mailer, submissionRateLimit: noOpRateLimit, turnstileVerifier: alwaysAllowTurnstile() });
 
   const response = await request(app)
     .post('/api/submissions')
@@ -129,7 +142,7 @@ test('POST /api/submissions does not send a confirmation email when contactEmail
 test('POST /api/submissions still succeeds when the mailer throws synchronously', async () => {
   const store = createMemoryStore();
   const mailer = createFakeMailer({ throwSync: true });
-  const app = createApp(store, { resolveTenantMiddleware: mockTenant, mailer });
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant, mailer, submissionRateLimit: noOpRateLimit, turnstileVerifier: alwaysAllowTurnstile() });
 
   const response = await request(app)
     .post('/api/submissions')
@@ -147,7 +160,7 @@ test('POST /api/submissions still succeeds when the mailer throws synchronously'
 test('POST /api/submissions still succeeds when the mailer rejects asynchronously', async () => {
   const store = createMemoryStore();
   const mailer = createFakeMailer({ rejectAsync: true });
-  const app = createApp(store, { resolveTenantMiddleware: mockTenant, mailer });
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant, mailer, submissionRateLimit: noOpRateLimit, turnstileVerifier: alwaysAllowTurnstile() });
 
   const response = await request(app)
     .post('/api/submissions')
@@ -164,7 +177,7 @@ test('POST /api/submissions still succeeds when the mailer rejects asynchronousl
 
 test('POST /api/submissions rejects invalid categories before writing', async () => {
   const store = createMemoryStore();
-  const app = createApp(store, { resolveTenantMiddleware: mockTenant });
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant, submissionRateLimit: noOpRateLimit, turnstileVerifier: alwaysAllowTurnstile() });
 
   const response = await request(app)
     .post('/api/submissions')
@@ -214,7 +227,7 @@ test('GET /api/submissions passes dashboard filters to the store', async () => {
   // Bypass auth middleware by providing a mock requireAuth via a store wrapper that already
   // has the auth check baked into the route — for integration-test purposes we patch the
   // route factory to skip auth by providing the tenant middleware only.
-  const app = createApp(store, { resolveTenantMiddleware: mockTenant });
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant, submissionRateLimit: noOpRateLimit, turnstileVerifier: alwaysAllowTurnstile() });
 
   // Inject a fake auth header so requireAuth passes (we mock it at the route level via
   // a custom createSubmissionsRouter in a separate test helper if needed — for now the
@@ -245,7 +258,7 @@ test('GET /api/submissions/track/:trackingId hides internal-only fields', async 
       internalNotes: 'Sensitive routing note',
     },
   ]);
-  const app = createApp(store, { resolveTenantMiddleware: mockTenant });
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant, submissionRateLimit: noOpRateLimit, turnstileVerifier: alwaysAllowTurnstile() });
 
   const response = await request(app).get('/api/submissions/track/gun-abcde');
 
@@ -273,7 +286,7 @@ test('PATCH /api/submissions/:id is protected and returns 401 without a token', 
       internalNotes: null,
     },
   ]);
-  const app = createApp(store, { resolveTenantMiddleware: mockTenant });
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant, submissionRateLimit: noOpRateLimit, turnstileVerifier: alwaysAllowTurnstile() });
 
   const response = await request(app)
     .patch('/api/submissions/case-1')
@@ -284,7 +297,7 @@ test('PATCH /api/submissions/:id is protected and returns 401 without a token', 
 
 test('PATCH /api/submissions/:id rejects invalid status regardless of auth', async () => {
   const store = createMemoryStore();
-  const app = createApp(store, { resolveTenantMiddleware: mockTenant });
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant, submissionRateLimit: noOpRateLimit, turnstileVerifier: alwaysAllowTurnstile() });
 
   // Bad status is caught before the auth check
   const response = await request(app)
@@ -293,4 +306,47 @@ test('PATCH /api/submissions/:id rejects invalid status regardless of auth', asy
 
   assert.equal(response.status, 400);
   assert.match(response.body.error, /status must be one of/i);
+});
+
+test('POST /api/submissions is rate limited per IP', async () => {
+  const store = createMemoryStore();
+  const tinyRateLimit = rateLimit({ windowMs: 60 * 60 * 1000, limit: 2, standardHeaders: true, legacyHeaders: false });
+  const app = createApp(store, {
+    resolveTenantMiddleware: mockTenant,
+    submissionRateLimit: tinyRateLimit,
+    turnstileVerifier: alwaysAllowTurnstile(),
+  });
+
+  const payload = { title: 'Broken streetlight', category: 'infrastructure', description: 'desc' };
+
+  const first = await request(app).post('/api/submissions').send(payload);
+  const second = await request(app).post('/api/submissions').send(payload);
+  const third = await request(app).post('/api/submissions').send(payload);
+
+  assert.equal(first.status, 201);
+  assert.equal(second.status, 201);
+  assert.equal(third.status, 429);
+  assert.equal(store.submissions.length, 2);
+});
+
+test('POST /api/submissions rejects requests that fail CAPTCHA verification', async () => {
+  const store = createMemoryStore();
+  const app = createApp(store, {
+    resolveTenantMiddleware: mockTenant,
+    submissionRateLimit: noOpRateLimit,
+    turnstileVerifier: { verifyToken: async () => false },
+  });
+
+  const response = await request(app)
+    .post('/api/submissions')
+    .send({
+      title: 'Broken streetlight',
+      category: 'infrastructure',
+      description: 'desc',
+      turnstileToken: 'bad-token',
+    });
+
+  assert.equal(response.status, 400);
+  assert.match(response.body.error, /CAPTCHA/i);
+  assert.equal(store.submissions.length, 0);
 });

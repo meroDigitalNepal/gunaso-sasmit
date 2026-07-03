@@ -36,7 +36,7 @@ jobs:
   #                      ACR_LOGIN_SERVER, ACR_USERNAME, ACR_PASSWORD,
   #                      AZURE_RESOURCE_GROUP, DATABASE_URL,
   #                      ENTRA_CLIENT_ID, VITE_ENTRA_AUTHORITY,
-  #                      VITE_ENTRA_API_SCOPE
+  #                      VITE_ENTRA_API_SCOPE, VITE_TURNSTILE_SITE_KEY
   # Environment secrets: AZURE_CONTAINER_APP_NAME
   #
   # All other Container App env vars (PARLIAMENTARIAN_ID, CORS_ORIGIN,
@@ -83,6 +83,7 @@ jobs:
             VITE_ENTRA_CLIENT_ID=${{ secrets.ENTRA_CLIENT_ID }}
             VITE_ENTRA_AUTHORITY=${{ secrets.VITE_ENTRA_AUTHORITY }}
             VITE_ENTRA_API_SCOPE=${{ secrets.VITE_ENTRA_API_SCOPE }}
+            VITE_TURNSTILE_SITE_KEY=${{ secrets.VITE_TURNSTILE_SITE_KEY }}
 
       - name: Setup Node.js for migrations
         uses: actions/setup-node@v4

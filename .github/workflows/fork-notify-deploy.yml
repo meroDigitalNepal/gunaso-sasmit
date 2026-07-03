@@ -1,0 +1,36 @@
+# ---------------------------------------------------------------------------
+# Lives in the main repo so every fork inherits it. Lets a Representative's
+# own fork trigger the main repo's deploy pipeline (azure-deploy.yml) without
+# giving them write access to the main repo.
+#
+# One-time setup per fork (done by the Representative, in their fork's
+# Settings):
+#   1. Settings → Actions → General → enable Actions (forks start disabled).
+#   2. Settings → Secrets and variables → Actions → Variables → add REP_NAME
+#      (e.g. "sasmit").
+#   3. Settings → Secrets and variables → Actions → Secrets → add
+#      UPSTREAM_DISPATCH_TOKEN (a fine-grained PAT a maintainer issues you,
+#      scoped to only meroDigitalNepal/gunaso with Contents: Read and write).
+#
+# After that, every push to this fork's `main` fires a deploy request against
+# the main repo, which pauses for a maintainer's one-click approval
+# (GitHub Environment "required reviewers") before it touches Azure.
+# ---------------------------------------------------------------------------
+name: Notify upstream of push
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  notify:
+    if: github.repository != 'meroDigitalNepal/gunaso'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch deploy request to upstream
+        run: |
+          curl -sf -X POST \
+            -H "Authorization: token ${{ secrets.UPSTREAM_DISPATCH_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/meroDigitalNepal/gunaso/dispatches \
+            -d "{\"event_type\":\"rep-deploy\",\"client_payload\":{\"rep\":\"${{ vars.REP_NAME }}\",\"repo\":\"${{ github.repository }}\",\"sha\":\"${{ github.sha }}\"}}"

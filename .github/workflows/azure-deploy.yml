@@ -1,27 +1,60 @@
-name: Deploy MP App
+name: Deploy Gunaso App
 
 on:
-  push:
-    branches:
-      - 'mp/**'
+  repository_dispatch:
+    types: [rep-deploy]
   workflow_dispatch:
+    inputs:
+      rep:
+        description: 'Representative name (matches a GitHub Environment)'
+        required: true
+      repo:
+        description: 'Source repo owner/name (defaults to this repo)'
+        required: false
+      sha:
+        description: 'Commit SHA to deploy (defaults to latest on this repo)'
+        required: false
 
 jobs:
   # ---------------------------------------------------------------------------
-  # Extract the MP name from the branch name.
-  # mp/sasmit  →  sasmit
-  # This name is used as the GitHub Environment, so each job pulls secrets
-  # from the matching environment.
+  # Resolve which Representative this run is for, and which commit/repo to
+  # build.
+  #
+  # - repository_dispatch (a Representative's fork): sent by their fork via
+  #   fork-notify-deploy.yml, carrying their own rep/repo/sha.
+  # - workflow_dispatch (manual, maintainer-triggered): for one-off/testing
+  #   deploys; repo/sha default to this repo's latest commit if left blank.
+  #
+  # `rep` is used as the GitHub Environment name, so each job pulls secrets
+  # from the matching environment. `repo`/`sha` tell the checkout step where
+  # the code actually lives — a Representative's fork for dispatch, or
+  # whatever was specified (or defaulted) for a manual run.
   # ---------------------------------------------------------------------------
   resolve-env:
     name: Resolve environment
     runs-on: ubuntu-latest
     outputs:
-      mp: ${{ steps.extract.outputs.mp }}
+      rep: ${{ steps.extract.outputs.rep }}
+      repo: ${{ steps.extract.outputs.repo }}
+      sha: ${{ steps.extract.outputs.sha }}
     steps:
-      - name: Extract MP name from branch
+      - name: Extract representative name, source repo, and commit
         id: extract
-        run: echo "mp=${GITHUB_REF_NAME#mp/}" >> $GITHUB_OUTPUT
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            rep="${{ github.event.client_payload.rep }}"
+            repo="${{ github.event.client_payload.repo }}"
+            sha="${{ github.event.client_payload.sha }}"
+          else
+            rep="${{ inputs.rep }}"
+            repo="${{ inputs.repo }}"
+            sha="${{ inputs.sha }}"
+            repo="${repo:-${{ github.repository }}}"
+            sha="${sha:-${{ github.sha }}}"
+          fi
+          echo "rep=$rep" >> "$GITHUB_OUTPUT"
+          echo "repo=$repo" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
   # ---------------------------------------------------------------------------
   # Build a multi-stage Docker image (frontend + server), run migrations,
@@ -44,14 +77,17 @@ jobs:
   # and are NOT re-set on each deploy — only the image is updated here.
   # ---------------------------------------------------------------------------
   deploy:
-    name: Deploy (${{ needs.resolve-env.outputs.mp }})
+    name: Deploy (${{ needs.resolve-env.outputs.rep }})
     needs: resolve-env
     runs-on: ubuntu-latest
-    environment: ${{ needs.resolve-env.outputs.mp }}
+    environment: ${{ needs.resolve-env.outputs.rep }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.resolve-env.outputs.repo }}
+          ref: ${{ needs.resolve-env.outputs.sha }}
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -77,8 +113,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.ACR_LOGIN_SERVER }}/gunaso-${{ needs.resolve-env.outputs.mp }}:${{ github.sha }}
-            ${{ secrets.ACR_LOGIN_SERVER }}/gunaso-${{ needs.resolve-env.outputs.mp }}:latest
+            ${{ secrets.ACR_LOGIN_SERVER }}/gunaso-${{ needs.resolve-env.outputs.rep }}:${{ needs.resolve-env.outputs.sha }}
+            ${{ secrets.ACR_LOGIN_SERVER }}/gunaso-${{ needs.resolve-env.outputs.rep }}:latest
           build-args: |
             VITE_ENTRA_CLIENT_ID=${{ secrets.ENTRA_CLIENT_ID }}
             VITE_ENTRA_AUTHORITY=${{ secrets.VITE_ENTRA_AUTHORITY }}
@@ -111,4 +147,4 @@ jobs:
             az containerapp update \
               --name ${{ secrets.AZURE_CONTAINER_APP_NAME }} \
               --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-              --image ${{ secrets.ACR_LOGIN_SERVER }}/gunaso-${{ needs.resolve-env.outputs.mp }}:${{ github.sha }}
+              --image ${{ secrets.ACR_LOGIN_SERVER }}/gunaso-${{ needs.resolve-env.outputs.rep }}:${{ needs.resolve-env.outputs.sha }}

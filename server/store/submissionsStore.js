@@ -17,10 +17,6 @@ function createSubmissionsStore(pool) {
       conditions.push(`status = $${params.length + 1}`);
       params.push(filters.status);
     }
-    if (filters.category) {
-      conditions.push(`category = $${params.length + 1}`);
-      params.push(filters.category);
-    }
 
     const sql = `SELECT * FROM submissions WHERE ${conditions.join(' AND ')} ORDER BY created_at DESC`;
     const { rows } = await pool.query(sql, params);

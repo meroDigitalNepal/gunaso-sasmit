@@ -1,16 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Heading, Text, Button, Card, Input, Select, Textarea, Stack } from '@mero-nepal/ui';
+import { Heading, Text, Button, Card, Input, Textarea, Stack } from '@mero-nepal/ui';
 import Alert from '../components/Alert';
 import { api } from '../api';
-
-const CATEGORIES = [
-  { value: 'infrastructure', label: 'Infrastructure' },
-  { value: 'health', label: 'Health' },
-  { value: 'education', label: 'Education' },
-  { value: 'security', label: 'Security' },
-  { value: 'other', label: 'Other' },
-];
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 const TURNSTILE_SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
@@ -18,7 +10,7 @@ const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_ATTACHMENT_TYPES = '.jpg,.jpeg,.png,.webp,.pdf,.doc,.docx';
 
 export default function Submit() {
-  const [form, setForm] = useState({ title: '', category: '', description: '', contactEmail: '' });
+  const [form, setForm] = useState({ title: '', description: '', contactEmail: '' });
   const [attachment, setAttachment] = useState(null);
   const [attachmentError, setAttachmentError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -205,13 +197,6 @@ export default function Submit() {
             label="Title" name="title"
             placeholder="Brief summary of your Gunaso"
             value={form.title} onChange={handleChange} required
-          />
-
-          <Select
-            label="Category" name="category"
-            placeholder="Select a category"
-            options={CATEGORIES}
-            value={form.category} onChange={handleChange} required
           />
 
           <Textarea

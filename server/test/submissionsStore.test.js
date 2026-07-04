@@ -23,7 +23,6 @@ test('store getAll scopes to mpId and applies filters', async () => {
       tracking_id: 'tracking-1',
       mp_id: MP_ID,
       title: 'Clinic issue',
-      category: 'health',
       description: 'Needs review',
       contact_email: null,
       status: 'new',
@@ -35,7 +34,7 @@ test('store getAll scopes to mpId and applies filters', async () => {
   ] });
 
   const store = createSubmissionsStore(pool);
-  const results = await store.getAll(MP_ID, { status: 'new', category: 'health' });
+  const results = await store.getAll(MP_ID, { status: 'new' });
 
   assert.equal(results.length, 1);
   assert.equal(results[0].trackingId, 'tracking-1');
@@ -44,8 +43,7 @@ test('store getAll scopes to mpId and applies filters', async () => {
   const { sql, params } = pool.calls[0];
   assert.match(sql, /WHERE mp_id = \$1/);
   assert.match(sql, /status = \$2/);
-  assert.match(sql, /category = \$3/);
-  assert.deepEqual(params, [MP_ID, 'new', 'health']);
+  assert.deepEqual(params, [MP_ID, 'new']);
 });
 
 test('store getAll with no filters only scopes by mpId', async () => {
@@ -65,7 +63,6 @@ test('store create inserts with mp_id and returns camelCase', async () => {
     tracking_id: 'tracking-1',
     mp_id: MP_ID,
     title: 'Pothole',
-    category: 'infrastructure',
     description: 'Large pothole.',
     contact_email: null,
     status: 'new',
@@ -81,7 +78,6 @@ test('store create inserts with mp_id and returns camelCase', async () => {
     id: 'sub-1',
     trackingId: 'tracking-1',
     title: 'Pothole',
-    category: 'infrastructure',
     description: 'Large pothole.',
     contactEmail: null,
     status: 'new',
@@ -106,7 +102,6 @@ test('store update scopes WHERE clause to mpId', async () => {
       tracking_id: 'tracking-1',
       mp_id: MP_ID,
       title: 'Water leak',
-      category: 'infrastructure',
       description: 'Leak near the park.',
       contact_email: null,
       status: 'resolved',

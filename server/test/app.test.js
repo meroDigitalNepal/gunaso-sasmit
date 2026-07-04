@@ -53,7 +53,6 @@ function createMemoryStore(initialSubmissions = []) {
       return submissions.filter(s => {
         if (s.mpId !== mpId) return false;
         if (filters.status && s.status !== filters.status) return false;
-        if (filters.category && s.category !== filters.category) return false;
         return true;
       });
     },
@@ -98,7 +97,6 @@ test('POST /api/submissions creates a new submission with defaults', async () =>
     .post('/api/submissions')
     .send({
       title: 'Broken streetlight',
-      category: 'infrastructure',
       description: 'The lamp has been off for 2 weeks.',
     });
 
@@ -122,7 +120,6 @@ test('POST /api/submissions sends a confirmation email when contactEmail is prov
     .post('/api/submissions')
     .send({
       title: 'Broken streetlight',
-      category: 'infrastructure',
       description: 'The lamp has been off for 2 weeks.',
       contactEmail: 'citizen@example.com',
     });
@@ -147,7 +144,6 @@ test('POST /api/submissions does not send a confirmation email when contactEmail
     .post('/api/submissions')
     .send({
       title: 'Broken streetlight',
-      category: 'infrastructure',
       description: 'The lamp has been off for 2 weeks.',
     });
 
@@ -165,7 +161,6 @@ test('POST /api/submissions still succeeds when the mailer throws synchronously'
     .post('/api/submissions')
     .send({
       title: 'Broken streetlight',
-      category: 'infrastructure',
       description: 'The lamp has been off for 2 weeks.',
       contactEmail: 'citizen@example.com',
     });
@@ -183,7 +178,6 @@ test('POST /api/submissions still succeeds when the mailer rejects asynchronousl
     .post('/api/submissions')
     .send({
       title: 'Broken streetlight',
-      category: 'infrastructure',
       description: 'The lamp has been off for 2 weeks.',
       contactEmail: 'citizen@example.com',
     });
@@ -192,20 +186,18 @@ test('POST /api/submissions still succeeds when the mailer rejects asynchronousl
   assert.equal(store.submissions.length, 1);
 });
 
-test('POST /api/submissions rejects invalid categories before writing', async () => {
+test('POST /api/submissions rejects requests missing required fields', async () => {
   const store = createMemoryStore();
   const app = createApp(store, { resolveTenantMiddleware: mockTenant, submissionRateLimit: noOpRateLimit, turnstileVerifier: alwaysAllowTurnstile() });
 
   const response = await request(app)
     .post('/api/submissions')
     .send({
-      title: 'Invalid category',
-      category: 'transport',
-      description: 'Should fail validation.',
+      title: 'Missing description',
     });
 
   assert.equal(response.status, 400);
-  assert.match(response.body.error, /category must be one of/i);
+  assert.match(response.body.error, /title and description are required/i);
   assert.equal(store.submissions.length, 0);
 });
 
@@ -216,7 +208,6 @@ test('GET /api/submissions passes dashboard filters to the store', async () => {
       trackingId: 'tracking-1',
       mpId: MP_ID,
       title: 'Clinic issue',
-      category: 'health',
       description: 'Needs review',
       contactEmail: null,
       status: 'new',
@@ -230,7 +221,6 @@ test('GET /api/submissions passes dashboard filters to the store', async () => {
       trackingId: 'tracking-2',
       mpId: MP_ID,
       title: 'Resolved clinic issue',
-      category: 'health',
       description: 'Already resolved',
       contactEmail: null,
       status: 'resolved',
@@ -251,7 +241,7 @@ test('GET /api/submissions passes dashboard filters to the store', async () => {
   // admin routes return 401 without a token, which is correct behaviour to test here).
   const response = await request(app)
     .get('/api/submissions')
-    .query({ status: 'new', category: 'health' })
+    .query({ status: 'new' })
     .set('Authorization', 'Bearer skip-for-unit-test');
 
   // 401 is expected without a real Entra token — this test confirms the route is protected.
@@ -265,7 +255,6 @@ test('GET /api/submissions/track/:trackingId hides internal-only fields', async 
       trackingId: 'GUN-ABCDE',
       mpId: MP_ID,
       title: 'Noise complaint',
-      category: 'other',
       description: 'Night construction noise.',
       contactEmail: 'person@example.com',
       status: 'resolved',
@@ -293,7 +282,6 @@ test('GET /api/submissions/track/:trackingId includes the attachment file name b
       trackingId: 'GUN-WITHFILE',
       mpId: MP_ID,
       title: 'Pothole',
-      category: 'infrastructure',
       description: 'desc',
       contactEmail: null,
       status: 'new',
@@ -324,7 +312,6 @@ test('GET /api/submissions/track/:trackingId/attachment streams the file for a v
       trackingId: 'GUN-WITHFILE',
       mpId: MP_ID,
       title: 'Pothole',
-      category: 'infrastructure',
       description: 'desc',
       contactEmail: null,
       status: 'new',
@@ -360,7 +347,6 @@ test('GET /api/submissions/track/:trackingId/attachment 404s when the submission
       trackingId: 'GUN-NOFILE',
       mpId: MP_ID,
       title: 'Pothole',
-      category: 'infrastructure',
       description: 'desc',
       contactEmail: null,
       status: 'new',
@@ -393,7 +379,6 @@ test('PATCH /api/submissions/:id is protected and returns 401 without a token', 
       trackingId: 'tracking-1',
       mpId: MP_ID,
       title: 'Water leak',
-      category: 'infrastructure',
       description: 'Leak near the park.',
       contactEmail: null,
       status: 'new',
@@ -434,7 +419,7 @@ test('POST /api/submissions is rate limited per IP', async () => {
     turnstileVerifier: alwaysAllowTurnstile(),
   });
 
-  const payload = { title: 'Broken streetlight', category: 'infrastructure', description: 'desc' };
+  const payload = { title: 'Broken streetlight', description: 'desc' };
 
   const first = await request(app).post('/api/submissions').send(payload);
   const second = await request(app).post('/api/submissions').send(payload);
@@ -458,7 +443,6 @@ test('POST /api/submissions rejects requests that fail CAPTCHA verification', as
     .post('/api/submissions')
     .send({
       title: 'Broken streetlight',
-      category: 'infrastructure',
       description: 'desc',
       turnstileToken: 'bad-token',
     });
@@ -480,7 +464,7 @@ test('POST /api/submissions reads the CAPTCHA token from the X-Turnstile-Token h
   await request(app)
     .post('/api/submissions')
     .set('X-Turnstile-Token', 'header-token-value')
-    .send({ title: 'Broken streetlight', category: 'infrastructure', description: 'desc' });
+    .send({ title: 'Broken streetlight', description: 'desc' });
 
   assert.equal(receivedToken, 'header-token-value');
 });
@@ -496,7 +480,6 @@ test('POST /api/submissions succeeds without an attachment (all attachment field
   const response = await request(app)
     .post('/api/submissions')
     .field('title', 'Broken streetlight')
-    .field('category', 'infrastructure')
     .field('description', 'desc');
 
   assert.equal(response.status, 201);
@@ -517,7 +500,6 @@ test('POST /api/submissions uploads a valid attachment and stores its metadata',
   const response = await request(app)
     .post('/api/submissions')
     .field('title', 'Broken streetlight')
-    .field('category', 'infrastructure')
     .field('description', 'desc')
     .attach('attachment', path.join(__dirname, 'fixtures', 'sample.png'));
 
@@ -541,7 +523,6 @@ test('POST /api/submissions accepts a real docx attachment', async () => {
   const response = await request(app)
     .post('/api/submissions')
     .field('title', 'Broken streetlight')
-    .field('category', 'infrastructure')
     .field('description', 'desc')
     .attach('attachment', path.join(__dirname, 'fixtures', 'sample.docx'));
 
@@ -563,7 +544,6 @@ test('POST /api/submissions rejects an oversized attachment', async () => {
   const response = await request(app)
     .post('/api/submissions')
     .field('title', 'Broken streetlight')
-    .field('category', 'infrastructure')
     .field('description', 'desc')
     .attach('attachment', oversized, 'huge.png');
 
@@ -584,7 +564,6 @@ test('POST /api/submissions rejects more than one attachment', async () => {
   const response = await request(app)
     .post('/api/submissions')
     .field('title', 'Broken streetlight')
-    .field('category', 'infrastructure')
     .field('description', 'desc')
     .attach('attachment', path.join(__dirname, 'fixtures', 'sample.png'))
     .attach('attachment', path.join(__dirname, 'fixtures', 'sample.pdf'));
@@ -609,7 +588,6 @@ test('POST /api/submissions rejects a file whose real content does not match an 
   const response = await request(app)
     .post('/api/submissions')
     .field('title', 'Broken streetlight')
-    .field('category', 'infrastructure')
     .field('description', 'desc')
     .attach('attachment', disguised, { filename: 'photo.jpg', contentType: 'image/jpeg' });
 
@@ -630,7 +608,6 @@ test('POST /api/submissions succeeds with attachment fields left null when blob 
   const response = await request(app)
     .post('/api/submissions')
     .field('title', 'Broken streetlight')
-    .field('category', 'infrastructure')
     .field('description', 'desc')
     .attach('attachment', path.join(__dirname, 'fixtures', 'sample.png'));
 

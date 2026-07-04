@@ -11,15 +11,6 @@ const STATUS_OPTIONS = [
   { value: 'resolved', label: 'Resolved' },
 ];
 
-const CATEGORY_OPTIONS = [
-  { value: '', label: 'All categories' },
-  { value: 'infrastructure', label: 'Infrastructure' },
-  { value: 'health', label: 'Health' },
-  { value: 'education', label: 'Education' },
-  { value: 'security', label: 'Security' },
-  { value: 'other', label: 'Other' },
-];
-
 const STATUS_LABELS = { new: 'New', in_review: 'In Review', resolved: 'Resolved' };
 const STATUS_VARIANTS = { new: 'primary', in_review: 'warning', resolved: 'success' };
 
@@ -28,11 +19,10 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
 
   useEffect(() => {
     fetchSubmissions();
-  }, [statusFilter, categoryFilter]);
+  }, [statusFilter]);
 
   async function fetchSubmissions() {
     setLoading(true);
@@ -40,7 +30,6 @@ export default function Dashboard() {
     try {
       const params = {};
       if (statusFilter) params.status = statusFilter;
-      if (categoryFilter) params.category = categoryFilter;
       const data = await api.listSubmissions(params);
       setSubmissions(data);
     } catch (err) {
@@ -64,12 +53,6 @@ export default function Dashboard() {
             onChange={e => setStatusFilter(e.target.value)}
             style={{ minWidth: '160px' }}
           />
-          <Select
-            options={CATEGORY_OPTIONS}
-            value={categoryFilter}
-            onChange={e => setCategoryFilter(e.target.value)}
-            style={{ minWidth: '160px' }}
-          />
         </Stack>
       </div>
 
@@ -90,7 +73,6 @@ export default function Dashboard() {
               <tr>
                 <th>Tracking ID</th>
                 <th>Title</th>
-                <th>Category</th>
                 <th>Status</th>
                 <th>Submitted</th>
                 <th></th>
@@ -101,7 +83,6 @@ export default function Dashboard() {
                 <tr key={s.id}>
                   <td style={{ fontFamily: 'var(--mero-typography-font-mono)', fontSize: 'var(--mero-typography-size-xs)', color: 'var(--mero-colors-text-subtle)' }}>{s.trackingId}</td>
                   <td style={{ fontWeight: 'var(--mero-typography-weight-medium)' }}>{s.title}</td>
-                  <td style={{ textTransform: 'capitalize', color: 'var(--mero-colors-text-subtle)' }}>{s.category}</td>
                   <td><Badge variant={STATUS_VARIANTS[s.status]}>{STATUS_LABELS[s.status]}</Badge></td>
                   <td style={{ color: 'var(--mero-colors-text-subtle)' }}>{new Date(s.createdAt).toLocaleDateString()}</td>
                   <td><Link to={`/dashboard/${s.id}`} style={{ color: 'var(--mero-colors-primary)', fontSize: 'var(--mero-typography-size-sm)' }}>View →</Link></td>

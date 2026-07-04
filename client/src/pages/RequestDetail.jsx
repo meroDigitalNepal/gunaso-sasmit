@@ -10,11 +10,6 @@ const STATUS_OPTIONS = [
   { value: 'resolved', label: 'Resolved' },
 ];
 
-const CATEGORY_LABELS = {
-  infrastructure: 'Infrastructure', health: 'Health',
-  education: 'Education', security: 'Security', other: 'Other',
-};
-
 export default function RequestDetail() {
   const { id } = useParams();
   const [submission, setSubmission] = useState(null);
@@ -130,7 +125,7 @@ export default function RequestDetail() {
         <div>
           <Text size="sm" subtle style={{ marginBottom: '6px', fontFamily: 'var(--mero-typography-font-mono)' }}>{submission.trackingId}</Text>
           <Heading level={3}>{submission.title}</Heading>
-          <Text size="sm" subtle style={{ marginTop: '8px' }}>{CATEGORY_LABELS[submission.category]} · Submitted {new Date(submission.createdAt).toLocaleDateString()}</Text>
+          <Text size="sm" subtle style={{ marginTop: '8px' }}>Submitted {new Date(submission.createdAt).toLocaleDateString()}</Text>
         </div>
       </div>
 

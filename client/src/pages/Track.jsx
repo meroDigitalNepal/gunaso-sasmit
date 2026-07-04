@@ -6,10 +6,6 @@ import { api } from '../api';
 
 const STATUS_LABELS = { new: 'New', in_review: 'In Review', resolved: 'Resolved' };
 const STATUS_VARIANTS = { new: 'primary', in_review: 'warning', resolved: 'success' };
-const CATEGORY_LABELS = {
-  infrastructure: 'Infrastructure', health: 'Health',
-  education: 'Education', security: 'Security', other: 'Other',
-};
 
 function StatusTimeline({ status }) {
   const steps = ['new', 'in_review', 'resolved'];
@@ -116,7 +112,6 @@ export default function Track() {
           </div>
 
           <div style={{ display: 'flex', gap: '20px', marginTop: '12px', flexWrap: 'wrap' }}>
-            <Field label="Category">{CATEGORY_LABELS[submission.category]}</Field>
             <Field label="Submitted">{new Date(submission.createdAt).toLocaleDateString()}</Field>
             <Field label="Last updated">{new Date(submission.updatedAt).toLocaleDateString()}</Field>
           </div>

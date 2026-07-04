@@ -101,7 +101,7 @@ export default function Dashboard() {
                 <tr key={s.id}>
                   <td style={{ fontFamily: 'var(--mero-typography-font-mono)', fontSize: 'var(--mero-typography-size-xs)', color: 'var(--mero-colors-text-subtle)' }}>{s.trackingId}</td>
                   <td style={{ fontWeight: 'var(--mero-typography-weight-medium)' }}>{s.title}</td>
-                  <td style={{ textTransform: 'capitalize', color: 'var(--mero-colors-text-subtle)' }}>{s.category}</td>
+                  <td style={{ textTransform: 'capitalize', color: 'var(--mero-colors-text-subtle)' }}>{s.category || '—'}</td>
                   <td><Badge variant={STATUS_VARIANTS[s.status]}>{STATUS_LABELS[s.status]}</Badge></td>
                   <td style={{ color: 'var(--mero-colors-text-subtle)' }}>{new Date(s.createdAt).toLocaleDateString()}</td>
                   <td><Link to={`/dashboard/${s.id}`} style={{ color: 'var(--mero-colors-primary)', fontSize: 'var(--mero-typography-size-sm)' }}>View →</Link></td>

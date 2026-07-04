@@ -72,10 +72,12 @@ function createSubmissionsRouter(store = defaultStore, {
     async (req, res) => {
       const { title, category, description, contactEmail } = req.body;
 
-      if (!title || !category || !description) {
-        return res.status(400).json({ error: 'title, category, and description are required' });
+      if (!title || !description) {
+        return res.status(400).json({ error: 'title and description are required' });
       }
-      if (!CATEGORIES.includes(category)) {
+      // Category is optional while it's hidden from the UI, but still validated
+      // when supplied so the column stays clean for when it's surfaced again.
+      if (category && !CATEGORIES.includes(category)) {
         return res.status(400).json({ error: `category must be one of: ${CATEGORIES.join(', ')}` });
       }
 
@@ -134,7 +136,7 @@ function createSubmissionsRouter(store = defaultStore, {
           id: submissionId,
           trackingId: uuidv4().toUpperCase(),
           title,
-          category,
+          category: category || null,
           description,
           contactEmail: contactEmail || null,
           status: 'new',
@@ -235,18 +237,24 @@ function createSubmissionsRouter(store = defaultStore, {
   });
 
   // PATCH /api/submissions/:id — admin only
-  // Status validation runs before requireAuth so callers get a 400 immediately
-  // on a bad enum value rather than a 401 that masks the real error.
+  // Enum validation runs before requireAuth so callers get a 400 immediately
+  // on a bad value rather than a 401 that masks the real error.
   router.patch('/:id', resolveTenantMiddleware, (req, res, next) => {
-    const { status } = req.body;
+    const { status, category } = req.body;
     if (status && !STATUSES.includes(status)) {
       return res.status(400).json({ error: `status must be one of: ${STATUSES.join(', ')}` });
     }
+    // A falsy category (empty string / null) clears the categorization, so
+    // only reject non-empty values that aren't in the allowed set.
+    if (category && !CATEGORIES.includes(category)) {
+      return res.status(400).json({ error: `category must be one of: ${CATEGORIES.join(', ')}` });
+    }
     next();
   }, requireAuth, requireRole('staff'), async (req, res) => {
-    const { status, publicResponse, internalNotes } = req.body;
+    const { status, category, publicResponse, internalNotes } = req.body;
     const updates = {};
     if (status !== undefined) updates.status = status;
+    if (category !== undefined) updates.category = category || null;
     if (publicResponse !== undefined) updates.publicResponse = publicResponse;
     if (internalNotes !== undefined) updates.internalNotes = internalNotes;
 

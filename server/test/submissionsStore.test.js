@@ -118,7 +118,7 @@ test('store update scopes WHERE clause to mpId', async () => {
   ] });
   const store = createSubmissionsStore(pool);
 
-  const result = await store.update(MP_ID, 'sub-1', { status: 'resolved', publicResponse: 'Fixed.' });
+  const result = await store.update(MP_ID, 'sub-1', { status: 'resolved', category: 'infrastructure', publicResponse: 'Fixed.' });
 
   assert.equal(result.status, 'resolved');
 
@@ -126,6 +126,7 @@ test('store update scopes WHERE clause to mpId', async () => {
   assert.match(sql, /WHERE id = \$\d+ AND mp_id = \$\d+/);
   assert.ok(params.includes('sub-1'));
   assert.ok(params.includes(MP_ID));
+  assert.ok(params.includes('infrastructure'), 'category must be forwarded into the UPDATE params');
 });
 
 test('store update returns null when no rows matched', async () => {

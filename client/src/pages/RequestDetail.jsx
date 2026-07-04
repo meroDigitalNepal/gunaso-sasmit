@@ -10,10 +10,16 @@ const STATUS_OPTIONS = [
   { value: 'resolved', label: 'Resolved' },
 ];
 
-const CATEGORY_LABELS = {
-  infrastructure: 'Infrastructure', health: 'Health',
-  education: 'Education', security: 'Security', other: 'Other',
-};
+// Category is assigned by staff during triage — citizens never pick it.
+// The empty option lets staff leave a submission uncategorized.
+const CATEGORY_OPTIONS = [
+  { value: '', label: 'Uncategorized' },
+  { value: 'infrastructure', label: 'Infrastructure' },
+  { value: 'health', label: 'Health' },
+  { value: 'education', label: 'Education' },
+  { value: 'security', label: 'Security' },
+  { value: 'other', label: 'Other' },
+];
 
 export default function RequestDetail() {
   const { id } = useParams();
@@ -24,6 +30,7 @@ export default function RequestDetail() {
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   const [status, setStatus] = useState('');
+  const [category, setCategory] = useState('');
   const [publicResponse, setPublicResponse] = useState('');
   const [internalNotes, setInternalNotes] = useState('');
   const [downloadError, setDownloadError] = useState(null);
@@ -68,6 +75,7 @@ export default function RequestDetail() {
       const data = await api.getSubmission(id);
       setSubmission(data);
       setStatus(data.status);
+      setCategory(data.category || '');
       setPublicResponse(data.publicResponse || '');
       setInternalNotes(data.internalNotes || '');
     } catch (err) {
@@ -99,7 +107,7 @@ export default function RequestDetail() {
     setSaveSuccess(false);
     setError(null);
     try {
-      const updated = await api.updateSubmission(id, { status, publicResponse, internalNotes });
+      const updated = await api.updateSubmission(id, { status, category, publicResponse, internalNotes });
       setSubmission(updated);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -130,7 +138,7 @@ export default function RequestDetail() {
         <div>
           <Text size="sm" subtle style={{ marginBottom: '6px', fontFamily: 'var(--mero-typography-font-mono)' }}>{submission.trackingId}</Text>
           <Heading level={3}>{submission.title}</Heading>
-          <Text size="sm" subtle style={{ marginTop: '8px' }}>{CATEGORY_LABELS[submission.category]} · Submitted {new Date(submission.createdAt).toLocaleDateString()}</Text>
+          <Text size="sm" subtle style={{ marginTop: '8px' }}>Submitted {new Date(submission.createdAt).toLocaleDateString()}</Text>
         </div>
       </div>
 
@@ -169,6 +177,14 @@ export default function RequestDetail() {
       <Stack gap="20px">
         {error && <Alert>{error}</Alert>}
         {saveSuccess && <Alert variant="success">Changes saved successfully.</Alert>}
+
+        <Select
+          label="Category"
+          hint="Assigned by your team — not chosen by the citizen"
+          options={CATEGORY_OPTIONS}
+          value={category}
+          onChange={e => setCategory(e.target.value)}
+        />
 
         <Select
           label="Status"

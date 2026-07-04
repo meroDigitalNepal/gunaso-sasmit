@@ -444,6 +444,19 @@ test('PATCH /api/submissions/:id rejects invalid status regardless of auth', asy
   assert.match(response.body.error, /status must be one of/i);
 });
 
+test('PATCH /api/submissions/:id rejects an invalid category regardless of auth', async () => {
+  const store = createMemoryStore();
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant, submissionRateLimit: noOpRateLimit, turnstileVerifier: alwaysAllowTurnstile() });
+
+  // Bad category is caught before the auth check, like status
+  const response = await request(app)
+    .patch('/api/submissions/case-1')
+    .send({ category: 'transport' });
+
+  assert.equal(response.status, 400);
+  assert.match(response.body.error, /category must be one of/i);
+});
+
 test('POST /api/submissions is rate limited per IP', async () => {
   const store = createMemoryStore();
   const tinyRateLimit = rateLimit({ windowMs: 60 * 60 * 1000, limit: 2, standardHeaders: true, legacyHeaders: false });

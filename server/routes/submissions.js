@@ -70,7 +70,7 @@ function createSubmissionsRouter(store = defaultStore, {
     },
     upload.single('attachment'),
     async (req, res) => {
-      const { title, category, description, contactEmail } = req.body;
+      const { title, category, description, contactEmail, contactPhone } = req.body;
 
       if (!title || !description) {
         return res.status(400).json({ error: 'title and description are required' });
@@ -139,6 +139,7 @@ function createSubmissionsRouter(store = defaultStore, {
           category: category || null,
           description,
           contactEmail: contactEmail || null,
+          contactPhone: contactPhone || null,
           status: 'new',
           createdAt: now,
           updatedAt: now,

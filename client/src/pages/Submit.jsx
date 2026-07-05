@@ -10,7 +10,7 @@ const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_ATTACHMENT_TYPES = '.jpg,.jpeg,.png,.webp,.pdf,.doc,.docx';
 
 export default function Submit() {
-  const [form, setForm] = useState({ title: '', description: '', contactEmail: '' });
+  const [form, setForm] = useState({ title: '', description: '', contactEmail: '', contactPhone: '' });
   const [attachment, setAttachment] = useState(null);
   const [attachmentError, setAttachmentError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -56,6 +56,13 @@ export default function Submit() {
 
   function handleChange(e) {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  }
+
+  // Phone accepts digits only — strip anything else as the user types so the
+  // stored value is always a bare number.
+  function handlePhoneChange(e) {
+    const digitsOnly = e.target.value.replace(/\D/g, '');
+    setForm(f => ({ ...f, contactPhone: digitsOnly }));
   }
 
   // Client-side size check is UX only — the server enforces the real limit.
@@ -206,9 +213,17 @@ export default function Submit() {
           />
 
           <Input
-            label="Contact email" name="contactEmail" type="email"
+            label="Email" name="contactEmail" type="email"
             placeholder="you@example.com"
             value={form.contactEmail} onChange={handleChange}
+            hint="We'll only use this to follow up on your Gunaso."
+          />
+
+          <Input
+            label="Phone" name="contactPhone" type="tel"
+            inputMode="numeric" pattern="[0-9]*"
+            placeholder="98XXXXXXXX"
+            value={form.contactPhone} onChange={handlePhoneChange}
             hint="We'll only use this to follow up on your Gunaso."
           />
 

@@ -206,14 +206,14 @@ export default function Submit() {
           />
 
           <Input
-            label="Contact email" name="contactEmail" type="email"
+            label="Email" name="contactEmail" type="email"
             placeholder="you@example.com"
             value={form.contactEmail} onChange={handleChange}
             hint="We'll only use this to follow up on your Gunaso."
           />
 
           <Input
-            label="Contact phone" name="contactPhone" type="tel"
+            label="Phone" name="contactPhone" type="tel"
             placeholder="98XXXXXXXX"
             value={form.contactPhone} onChange={handleChange}
             hint="Optional — we'll only use this to follow up on your Gunaso."

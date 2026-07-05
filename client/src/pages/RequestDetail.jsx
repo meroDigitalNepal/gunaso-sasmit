@@ -150,6 +150,11 @@ export default function RequestDetail() {
             Contact: <a href={`mailto:${submission.contactEmail}`}>{submission.contactEmail}</a>
           </Text>
         )}
+        {submission.contactPhone && (
+          <Text size="sm" subtle style={{ marginTop: submission.contactEmail ? '4px' : '14px' }}>
+            Phone: <a href={`tel:${submission.contactPhone}`}>{submission.contactPhone}</a>
+          </Text>
+        )}
         {submission.attachmentFileName && (
           <div style={{ marginTop: '14px' }}>
             {attachmentPreviewUrl && submission.attachmentContentType.startsWith('image/') && (

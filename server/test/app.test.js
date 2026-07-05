@@ -106,10 +106,29 @@ test('POST /api/submissions creates a new submission with defaults', async () =>
   assert.match(response.body.id, /^[0-9a-f-]{36}$/i);
   assert.match(response.body.trackingId, /^[0-9a-f-]{36}$/i);
   assert.equal(response.body.contactEmail, null);
+  assert.equal(response.body.contactPhone, null);
   assert.equal(response.body.publicResponse, null);
   assert.equal(response.body.internalNotes, null);
   assert.equal(store.submissions.length, 1);
   assert.equal(store.submissions[0].mpId, MP_ID);
+});
+
+test('POST /api/submissions stores a supplied contactPhone', async () => {
+  const store = createMemoryStore();
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant, submissionRateLimit: noOpRateLimit, turnstileVerifier: alwaysAllowTurnstile() });
+
+  const response = await request(app)
+    .post('/api/submissions')
+    .send({
+      title: 'Broken streetlight',
+      description: 'The lamp has been off for 2 weeks.',
+      contactPhone: '9812345678',
+    });
+
+  assert.equal(response.status, 201);
+  assert.equal(response.body.contactPhone, '9812345678');
+  assert.equal(store.submissions.length, 1);
+  assert.equal(store.submissions[0].contactPhone, '9812345678');
 });
 
 test('POST /api/submissions sends a confirmation email when contactEmail is provided', async () => {

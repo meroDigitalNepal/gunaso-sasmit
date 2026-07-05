@@ -10,7 +10,7 @@ const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_ATTACHMENT_TYPES = '.jpg,.jpeg,.png,.webp,.pdf,.doc,.docx';
 
 export default function Submit() {
-  const [form, setForm] = useState({ title: '', description: '', contactEmail: '' });
+  const [form, setForm] = useState({ title: '', description: '', contactEmail: '', contactPhone: '' });
   const [attachment, setAttachment] = useState(null);
   const [attachmentError, setAttachmentError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -210,6 +210,13 @@ export default function Submit() {
             placeholder="you@example.com"
             value={form.contactEmail} onChange={handleChange}
             hint="We'll only use this to follow up on your Gunaso."
+          />
+
+          <Input
+            label="Contact phone" name="contactPhone" type="tel"
+            placeholder="98XXXXXXXX"
+            value={form.contactPhone} onChange={handleChange}
+            hint="Optional — we'll only use this to follow up on your Gunaso."
           />
 
           <Input

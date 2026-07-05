@@ -224,7 +224,7 @@ export default function Submit() {
             inputMode="numeric" pattern="[0-9]*"
             placeholder="98XXXXXXXX"
             value={form.contactPhone} onChange={handlePhoneChange}
-            hint="Optional — digits only. We'll only use this to follow up on your Gunaso."
+            hint="Optional — we'll only use this to follow up on your Gunaso."
           />
 
           <Input

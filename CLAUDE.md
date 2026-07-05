@@ -40,9 +40,9 @@ There is no client test suite and no root-level lint. `docker compose up` does *
 
 ## Data model
 
-Three tables (`server/migrations/001_initial_schema.sql`): `mps` (tenants), `users` (staff, FK to `mps`, role check), `submissions` (FK to `mps`, indexed by `mp_id` + status/created_at). Submissions carry `status` (`new`/`in_review`/`resolved`), an optional `category` (made nullable in migration 004 — it's currently hidden from the UI but still validated when supplied), `public_response` (citizen-visible), and `internal_notes` (staff-only). Attachment columns were added in migration 003.
+Three tables (`server/migrations/001_initial_schema.sql`): `mps` (tenants), `users` (staff, FK to `mps`, role check), `submissions` (FK to `mps`, indexed by `mp_id` + status/created_at). Submissions carry `status` (`new`/`in_review`/`resolved`), an optional `category` (made nullable in migration 004 — it's currently hidden from the UI but still validated when supplied), optional `contact_email` and `contact_phone` (`contact_phone` added in migration 005 — both citizen-supplied, nullable, and unvalidated), `public_response` (citizen-visible), and `internal_notes` (staff-only). Attachment columns were added in migration 003.
 
-Migrations are plain `.sql` files in `server/migrations/`, applied in filename sort order by `migrate.js`, tracked in a `migrations` table. Add a new numbered file (`005_*.sql`); never edit an already-applied migration.
+Migrations are plain `.sql` files in `server/migrations/`, applied in filename sort order by `migrate.js`, tracked in a `migrations` table. Add a new numbered file (next is `006_*.sql`); never edit an already-applied migration.
 
 ## Security-sensitive request ordering
 

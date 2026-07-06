@@ -132,13 +132,14 @@ echo "   Container App URL: https://$CONTAINER_APP_FQDN"
 
 # 3. Create GitHub environment with required reviewer, and set secrets ─────────
 echo "→ [3/4] Creating GitHub environment..."
-DEFAULT_REVIEWER="$(gh api user --jq .login)"
-read -rp "GitHub username required to approve ${REP}'s deploys [${DEFAULT_REVIEWER}]: " REVIEWER_LOGIN
-REVIEWER_LOGIN="${REVIEWER_LOGIN:-$DEFAULT_REVIEWER}"
-REVIEWER_ID="$(gh api "users/${REVIEWER_LOGIN}" --jq .id)"
+ORG="${GITHUB_REPO%/*}"
+DEFAULT_REVIEWER_TEAM="maintainers"
+read -rp "GitHub team required to approve ${REP}'s deploys [${DEFAULT_REVIEWER_TEAM}]: " REVIEWER_TEAM
+REVIEWER_TEAM="${REVIEWER_TEAM:-$DEFAULT_REVIEWER_TEAM}"
+REVIEWER_TEAM_ID="$(gh api "orgs/${ORG}/teams/${REVIEWER_TEAM}" --jq .id)"
 gh api --method PUT "repos/${GITHUB_REPO}/environments/${REP}" \
-  -f 'reviewers[][type]=User' -F "reviewers[][id]=${REVIEWER_ID}" --silent
-echo "   Deploys to '${REP}' now require ${REVIEWER_LOGIN}'s approval."
+  -f 'reviewers[][type]=Team' -F "reviewers[][id]=${REVIEWER_TEAM_ID}" --silent
+echo "   Deploys to '${REP}' now require approval from any '${REVIEWER_TEAM}' team member."
 
 gh secret set AZURE_CONTAINER_APP_NAME \
   --env "$REP" --repo "$GITHUB_REPO" --body "$CONTAINER_APP_NAME"
@@ -161,7 +162,7 @@ echo ""
 echo "✅ ${REP} setup complete."
 echo ""
 echo "Once the fork is set up, a push to its main branch triggers a deploy that"
-echo "pauses for ${REVIEWER_LOGIN}'s approval. Until then, deploy manually via:"
+echo "pauses for '${REVIEWER_TEAM}' team approval. Until then, deploy manually via:"
 echo "  gh workflow run azure-deploy.yml -f rep=${REP}"
 echo "App will be available at: https://${CONTAINER_APP_FQDN}/gunaso"
 echo ""

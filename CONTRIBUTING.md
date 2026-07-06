@@ -81,16 +81,28 @@ Rotate or revoke it if they stop contributing.
 
 ### Enabling the approval gate for a new Representative
 
-`infra/add-rep.sh` does this automatically for new Representatives (it prompts
-for the reviewer's GitHub username). To set it up by hand instead — e.g. for
-an environment created before this script existed — either use the UI
-(Settings → Environments → `<rep-name>` → enable **Required reviewers** → add
-reviewers) or run:
+Deploy approval is granted to the org's `maintainers` GitHub team, not
+individual users — so anyone in that team gets notified and can approve, and
+adding/removing a maintainer later is just a team-membership change, not a
+per-environment one. `infra/add-rep.sh` wires this up automatically for new
+Representatives (it prompts for the team, defaulting to `maintainers`). To
+set it up by hand instead — e.g. for an environment created before this
+script existed — either use the UI (Settings → Environments → `<rep-name>` →
+enable **Required reviewers** → add the `maintainers` team) or run:
 
 ```bash
-REVIEWER_ID="$(gh api users/<github-username> --jq .id)"
+TEAM_ID="$(gh api orgs/meroDigitalNepal/teams/maintainers --jq .id)"
 gh api --method PUT repos/meroDigitalNepal/gunaso/environments/<rep-name> \
-  -f 'reviewers[][type]=User' -F "reviewers[][id]=${REVIEWER_ID}"
+  -f 'reviewers[][type]=Team' -F "reviewers[][id]=${TEAM_ID}"
+```
+
+To add or remove a maintainer, change their membership on the team instead:
+
+```bash
+gh api orgs/meroDigitalNepal/teams/maintainers/memberships/<username> \
+  --method PUT -f role=maintainer   # add
+gh api orgs/meroDigitalNepal/teams/maintainers/memberships/<username> \
+  --method DELETE                    # remove
 ```
 
 This applies regardless of whether the run was triggered by a fork's dispatch

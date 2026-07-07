@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Heading, Text, Select, Badge, Skeleton, Stack } from '@mero-nepal/ui';
 import Alert from '../components/Alert';
+import DashboardStats from '../components/DashboardStats';
 import { api } from '../api';
 
 const STATUS_OPTIONS = [
@@ -30,18 +31,18 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
 
+  // Fetch the full set once and filter the table client-side. This keeps the
+  // overview charts showing the whole picture regardless of the active filters,
+  // and makes filtering the table instant.
   useEffect(() => {
     fetchSubmissions();
-  }, [statusFilter, categoryFilter]);
+  }, []);
 
   async function fetchSubmissions() {
     setLoading(true);
     setError(null);
     try {
-      const params = {};
-      if (statusFilter) params.status = statusFilter;
-      if (categoryFilter) params.category = categoryFilter;
-      const data = await api.listSubmissions(params);
+      const data = await api.listSubmissions();
       setSubmissions(data);
     } catch (err) {
       setError(err.message);
@@ -50,27 +51,19 @@ export default function Dashboard() {
     }
   }
 
+  const filtered = useMemo(
+    () => submissions.filter(s =>
+      (!statusFilter || s.status === statusFilter) &&
+      (!categoryFilter || (categoryFilter === s.category))
+    ),
+    [submissions, statusFilter, categoryFilter],
+  );
+
   return (
     <main className="page" style={{ paddingTop: '48px', paddingBottom: '80px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '32px' }}>
-        <div>
-          <Heading level={2} style={{ marginBottom: '8px' }}>Dashboard</Heading>
-          <Text size="sm" subtle>Manage and respond to citizen submissions.</Text>
-        </div>
-        <Stack direction="row" gap="10px" wrap>
-          <Select
-            options={STATUS_OPTIONS}
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            style={{ minWidth: '160px' }}
-          />
-          <Select
-            options={CATEGORY_OPTIONS}
-            value={categoryFilter}
-            onChange={e => setCategoryFilter(e.target.value)}
-            style={{ minWidth: '160px' }}
-          />
-        </Stack>
+      <div style={{ marginBottom: '32px' }}>
+        <Heading level={2} style={{ marginBottom: '8px' }}>Dashboard</Heading>
+        <Text size="sm" subtle>Manage and respond to citizen submissions.</Text>
       </div>
 
       {error && <Alert style={{ marginBottom: '20px' }}>{error}</Alert>}
@@ -84,20 +77,43 @@ export default function Dashboard() {
           <Text size="lg" subtle>No submissions found.</Text>
         </div>
       ) : (
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Tracking ID</th>
-                <th>Title</th>
-                <th>Category</th>
-                <th>Status</th>
-                <th>Submitted</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {submissions.map(s => (
+        <>
+          <DashboardStats submissions={submissions} />
+
+          <Stack direction="row" gap="10px" wrap style={{ marginBottom: '20px' }}>
+            <Select
+              options={STATUS_OPTIONS}
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              style={{ minWidth: '160px' }}
+            />
+            <Select
+              options={CATEGORY_OPTIONS}
+              value={categoryFilter}
+              onChange={e => setCategoryFilter(e.target.value)}
+              style={{ minWidth: '160px' }}
+            />
+          </Stack>
+
+          {filtered.length === 0 ? (
+            <div style={{ textAlign: 'center', paddingTop: '48px' }}>
+              <Text size="lg" subtle>No submissions match the selected filters.</Text>
+            </div>
+          ) : (
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tracking ID</th>
+                  <th>Title</th>
+                  <th>Category</th>
+                  <th>Status</th>
+                  <th>Submitted</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(s => (
                 <tr key={s.id}>
                   <td style={{ fontFamily: 'var(--mero-typography-font-mono)', fontSize: 'var(--mero-typography-size-xs)', color: 'var(--mero-colors-text-subtle)' }}>{s.trackingId}</td>
                   <td style={{ fontWeight: 'var(--mero-typography-weight-medium)' }}>{s.title}</td>
@@ -107,9 +123,11 @@ export default function Dashboard() {
                   <td><Link to={`/dashboard/${s.id}`} style={{ color: 'var(--mero-colors-primary)', fontSize: 'var(--mero-typography-size-sm)' }}>View →</Link></td>
                 </tr>
               ))}
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
+          )}
+        </>
       )}
     </main>
   );

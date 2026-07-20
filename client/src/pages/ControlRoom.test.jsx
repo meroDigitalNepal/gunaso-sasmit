@@ -34,15 +34,12 @@ test('shows admin operational metrics including the longest-running open gunaso'
   expect(within(longest).getByText('Old pothole')).toBeInTheDocument();
   expect(within(longest).getByText(/open for 30 days/i)).toBeInTheDocument();
 
-  // Open = new + in_review (2 of 3); resolved rate = 1/3; avg resolution = 4 days.
+  // Open = new + in_review (2 of 3); resolved rate = 1/3.
   const openCard = screen.getByText('Open').parentElement;
   expect(within(openCard).getByText('2')).toBeInTheDocument();
 
   const rateCard = screen.getByText('Resolved rate').parentElement;
   expect(within(rateCard).getByText('33%')).toBeInTheDocument();
-
-  const avgCard = screen.getByText('Avg. resolution').parentElement;
-  expect(within(avgCard).getByText('4 days')).toBeInTheDocument();
 });
 
 test('renders an empty state without admin metrics when there are no submissions', async () => {

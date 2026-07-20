@@ -43,18 +43,11 @@ function AdminMetrics({ submissions }) {
     null,
   );
 
-  // Approximate: updatedAt is the last edit, which for a resolved submission is
-  // its resolution. Good enough for an at-a-glance turnaround signal.
-  const avgResolutionDays = resolved.length
-    ? Math.round(resolved.reduce((sum, s) => sum + (new Date(s.updatedAt) - new Date(s.createdAt)), 0) / resolved.length / DAY_MS)
-    : null;
-
   return (
     <section style={{ marginBottom: '16px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '16px' }}>
         <MetricCard label="Open" value={open.length} />
         <MetricCard label="Resolved rate" value={`${resolvedRate}%`} />
-        <MetricCard label="Avg. resolution" value={avgResolutionDays === null ? '—' : dayLabel(avgResolutionDays)} />
       </div>
 
       {longestOpen && (

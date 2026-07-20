@@ -42,7 +42,7 @@ export default function PublicDashboard() {
         </Stack>
       ) : !error && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
             <MetricCard label="Total submissions" value={total} />
             <MetricCard label="Categories tracked" value={categoriesTracked} />
             <MetricCard label="Resolved" value={resolved} />

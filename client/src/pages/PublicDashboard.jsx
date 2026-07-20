@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Heading, Text, Button, Skeleton, Stack } from '@mero-nepal/ui';
+import { Heading, Text, Skeleton, Stack } from '@mero-nepal/ui';
 import Alert from '../components/Alert';
 import { Donut, Legend, CategoryBars } from '../components/DashboardStats';
 import { panelStyle, panelTitleStyle, STATUS_META, CATEGORY_META } from '../components/chartTokens';
@@ -90,11 +89,6 @@ export default function PublicDashboard() {
               <CategoryBars bars={categoryBars} max={maxCategory} />
             </div>
           </div>
-
-          <Stack direction="row" gap="10px" wrap>
-            <Button as={Link} to="/submit">Submit a request</Button>
-            <Button as={Link} to="/track" variant="secondary">Track a request</Button>
-          </Stack>
         </>
       )}
     </main>

@@ -34,3 +34,19 @@ export const panelTitleStyle = {
   color: 'var(--mero-colors-text-subtle)',
   marginBottom: '18px',
 };
+
+// Shape status/category counts into the { label, value, color? } rows the
+// @mero-nepal/ui PieChart/BarChart expect. Used by both dashboards so the
+// admin (from the full submission list) and public (from /stats aggregates)
+// views render identical charts.
+export function statusChartData(byStatus) {
+  return STATUS_META.map(s => ({ label: s.label, color: s.color, value: byStatus?.[s.key] ?? 0 }));
+}
+
+export function categoryChartData(byCategory, uncategorized = 0) {
+  const data = CATEGORY_META.map(c => ({ label: c.label, value: byCategory?.[c.key] ?? 0 }));
+  if (uncategorized > 0) {
+    data.push({ label: 'Uncategorized', value: uncategorized });
+  }
+  return data;
+}

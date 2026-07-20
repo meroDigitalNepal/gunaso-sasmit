@@ -1,22 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Heading, Text, Skeleton, Stack } from '@mero-nepal/ui';
 import Alert from '../components/Alert';
-import { Donut, Legend, CategoryBars } from '../components/DashboardStats';
-import { panelStyle, panelTitleStyle, STATUS_META, CATEGORY_META } from '../components/chartTokens';
+import { StatsPanels, MetricCard } from '../components/DashboardStats';
+import { CATEGORY_META, statusChartData, categoryChartData } from '../components/chartTokens';
 import { api } from '../api';
-
-// A single headline metric card. Kept local to the public dashboard — the
-// control room shows the full table instead of these summary tiles.
-function MetricCard({ label, value }) {
-  return (
-    <div style={panelStyle}>
-      <div style={{ fontSize: '2rem', fontWeight: 'var(--mero-typography-weight-semibold)', color: 'var(--mero-colors-text)', lineHeight: 1 }}>
-        {value}
-      </div>
-      <div style={{ ...panelTitleStyle, marginBottom: 0, marginTop: '8px' }}>{label}</div>
-    </div>
-  );
-}
 
 // Public, unauthenticated overview. Reads only aggregate counts from
 // GET /api/submissions/stats — no individual submissions or citizen data.
@@ -34,23 +21,10 @@ export default function PublicDashboard() {
     return () => { cancelled = true; };
   }, []);
 
-  const statusSegments = STATUS_META.map(s => ({
-    ...s,
-    value: stats?.byStatus?.[s.key] ?? 0,
-  }));
-
-  const categoryBars = CATEGORY_META.map(c => ({
-    ...c,
-    value: stats?.byCategory?.[c.key] ?? 0,
-  }));
-  if (stats?.uncategorized > 0) {
-    categoryBars.push({ key: 'uncategorized', label: 'Uncategorized', value: stats.uncategorized });
-  }
-  const maxCategory = Math.max(0, ...categoryBars.map(b => b.value));
-  const categoriesTracked = categoryBars.filter(b => b.key !== 'uncategorized' && b.value > 0).length;
-  const resolved = stats?.byStatus?.resolved ?? 0;
   const total = stats?.total ?? 0;
+  const resolved = stats?.byStatus?.resolved ?? 0;
   const resolvedRate = total > 0 ? Math.round((resolved / total) * 100) : 0;
+  const categoriesTracked = CATEGORY_META.filter(c => (stats?.byCategory?.[c.key] ?? 0) > 0).length;
 
   return (
     <main className="page" style={{ paddingTop: '48px', paddingBottom: '80px' }}>
@@ -75,20 +49,10 @@ export default function PublicDashboard() {
             <MetricCard label="Resolved rate" value={`${resolvedRate}%`} />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '32px' }}>
-            <div style={panelStyle}>
-              <div style={panelTitleStyle}>Status distribution</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
-                <Donut segments={statusSegments} total={total} />
-                <Legend segments={statusSegments} total={total} />
-              </div>
-            </div>
-
-            <div style={panelStyle}>
-              <div style={panelTitleStyle}>Category distribution</div>
-              <CategoryBars bars={categoryBars} max={maxCategory} />
-            </div>
-          </div>
+          <StatsPanels
+            statusData={statusChartData(stats?.byStatus)}
+            categoryData={categoryChartData(stats?.byCategory, stats?.uncategorized ?? 0)}
+          />
         </>
       )}
     </main>

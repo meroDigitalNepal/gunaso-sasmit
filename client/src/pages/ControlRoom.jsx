@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Heading, Text, Select, Badge, Skeleton, Stack } from '@mero-nepal/ui';
 import Alert from '../components/Alert';
-import DashboardStats from '../components/DashboardStats';
+import DashboardStats, { MetricCard } from '../components/DashboardStats';
+import { panelStyle, panelTitleStyle } from '../components/chartTokens';
 import { api } from '../api';
 
 const STATUS_OPTIONS = [
@@ -23,6 +24,54 @@ const CATEGORY_OPTIONS = [
 
 const STATUS_LABELS = { new: 'New', in_review: 'In Review', resolved: 'Resolved' };
 const STATUS_VARIANTS = { new: 'primary', in_review: 'warning', resolved: 'success' };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const dayLabel = n => `${n} ${n === 1 ? 'day' : 'days'}`;
+const daysSince = iso => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / DAY_MS));
+
+// Staff-only operational metrics. Unlike the public dashboard's headline
+// counts, these surface workload/aging signals — how much is still open, how
+// fast it's being resolved, and which gunaso has been waiting the longest.
+function AdminMetrics({ submissions }) {
+  const open = submissions.filter(s => s.status !== 'resolved');
+  const resolved = submissions.filter(s => s.status === 'resolved');
+  const resolvedRate = submissions.length ? Math.round((resolved.length / submissions.length) * 100) : 0;
+
+  // Oldest still-open submission by creation time.
+  const longestOpen = open.reduce(
+    (oldest, s) => (!oldest || new Date(s.createdAt) < new Date(oldest.createdAt) ? s : oldest),
+    null,
+  );
+
+  // Approximate: updatedAt is the last edit, which for a resolved submission is
+  // its resolution. Good enough for an at-a-glance turnaround signal.
+  const avgResolutionDays = resolved.length
+    ? Math.round(resolved.reduce((sum, s) => sum + (new Date(s.updatedAt) - new Date(s.createdAt)), 0) / resolved.length / DAY_MS)
+    : null;
+
+  return (
+    <section style={{ marginBottom: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+        <MetricCard label="Open" value={open.length} />
+        <MetricCard label="Resolved rate" value={`${resolvedRate}%`} />
+        <MetricCard label="Avg. resolution" value={avgResolutionDays === null ? '—' : dayLabel(avgResolutionDays)} />
+      </div>
+
+      {longestOpen && (
+        <div style={{ ...panelStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ ...panelTitleStyle, marginBottom: '6px' }}>Longest-running open gunaso</div>
+            <Text weight="medium">{longestOpen.title}</Text>
+            <Text size="sm" subtle style={{ marginTop: '4px' }}>
+              Open for {dayLabel(daysSince(longestOpen.createdAt))} · <Badge variant={STATUS_VARIANTS[longestOpen.status]}>{STATUS_LABELS[longestOpen.status]}</Badge>
+            </Text>
+          </div>
+          <Link to={`/control-room/${longestOpen.id}`} style={{ color: 'var(--mero-colors-primary)', fontSize: 'var(--mero-typography-size-sm)', whiteSpace: 'nowrap' }}>View →</Link>
+        </div>
+      )}
+    </section>
+  );
+}
 
 export default function ControlRoom() {
   const [submissions, setSubmissions] = useState([]);
@@ -78,6 +127,8 @@ export default function ControlRoom() {
         </div>
       ) : (
         <>
+          <AdminMetrics submissions={submissions} />
+
           <DashboardStats submissions={submissions} />
 
           <Stack direction="row" gap="10px" wrap style={{ marginBottom: '20px' }}>

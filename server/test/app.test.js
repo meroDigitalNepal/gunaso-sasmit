@@ -301,6 +301,28 @@ test('GET /api/submissions passes dashboard filters to the store', async () => {
   assert.equal(response.status, 401);
 });
 
+test('GET /api/submissions/stats returns public aggregate counts without auth', async () => {
+  const store = createMemoryStore([
+    { id: '1', trackingId: 't1', mpId: MP_ID, title: 'A', description: 'x', status: 'new', category: 'health', internalNotes: 'secret' },
+    { id: '2', trackingId: 't2', mpId: MP_ID, title: 'B', description: 'x', status: 'resolved', category: 'health' },
+    { id: '3', trackingId: 't3', mpId: MP_ID, title: 'C', description: 'x', status: 'in_review', category: null },
+    { id: '4', trackingId: 't4', mpId: 'other-mp', title: 'D', description: 'x', status: 'new', category: 'security' },
+  ]);
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant, submissionRateLimit: noOpRateLimit, turnstileVerifier: alwaysAllowTurnstile() });
+
+  const response = await request(app).get('/api/submissions/stats');
+
+  assert.equal(response.status, 200);
+  // Scoped to the tenant — the other-mp row is excluded.
+  assert.equal(response.body.total, 3);
+  assert.deepEqual(response.body.byStatus, { new: 1, in_review: 1, resolved: 1 });
+  assert.equal(response.body.byCategory.health, 2);
+  assert.equal(response.body.byCategory.security, 0);
+  assert.equal(response.body.uncategorized, 1);
+  // No individual submission fields leak into the aggregate response.
+  assert.equal(JSON.stringify(response.body).includes('secret'), false);
+});
+
 test('GET /api/submissions/track/:trackingId hides internal-only fields', async () => {
   const store = createMemoryStore([
     {

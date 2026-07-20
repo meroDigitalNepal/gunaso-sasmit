@@ -8,7 +8,7 @@ export default function Login() {
   const { isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || '/dashboard';
+  const from = location.state?.from?.pathname || '/control-room';
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function Login() {
     <main className="page" style={{ paddingTop: '80px', textAlign: 'center' }}>
       <Heading level={2} style={{ marginBottom: '8px' }}>Admin Login</Heading>
       <Text subtle style={{ marginBottom: '32px' }}>
-        Sign in with your organisation account to access the dashboard.
+        Sign in with your organisation account to access the control room.
       </Text>
       {error && <Alert style={{ marginBottom: '24px', textAlign: 'left' }}>{error}</Alert>}
       <Button onClick={handleLogin}>

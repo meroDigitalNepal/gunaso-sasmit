@@ -216,6 +216,34 @@ function createSubmissionsRouter(store = defaultStore, {
     }
   });
 
+  // GET /api/submissions/stats — public: aggregate counts only, no individual
+  // submissions or citizen-supplied text. Powers the public /dashboard page.
+  // Registered before /:id so "stats" isn't captured as a submission id.
+  router.get('/stats', resolveTenantMiddleware, async (req, res) => {
+    try {
+      const submissions = await store.getAll(req.mp.id);
+
+      const byStatus = STATUSES.reduce((acc, s) => ({ ...acc, [s]: 0 }), {});
+      const byCategory = CATEGORIES.reduce((acc, c) => ({ ...acc, [c]: 0 }), {});
+      let uncategorized = 0;
+
+      for (const s of submissions) {
+        if (s.status in byStatus) byStatus[s.status] += 1;
+        if (s.category && s.category in byCategory) byCategory[s.category] += 1;
+        else if (!s.category) uncategorized += 1;
+      }
+
+      res.json({
+        total: submissions.length,
+        byStatus,
+        byCategory,
+        uncategorized,
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // GET /api/submissions/:id — admin only
   router.get('/:id', resolveTenantMiddleware, requireAuth, requireRole('staff'), async (req, res) => {
     try {

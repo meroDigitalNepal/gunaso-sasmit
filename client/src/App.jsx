@@ -7,7 +7,8 @@ import { useAuth } from './auth/useAuth';
 import Home from './pages/Home';
 import Submit from './pages/Submit';
 import Track from './pages/Track';
-import Dashboard from './pages/Dashboard';
+import PublicDashboard from './pages/PublicDashboard';
+import ControlRoom from './pages/ControlRoom';
 import RequestDetail from './pages/RequestDetail';
 import Login from './pages/Login';
 
@@ -21,10 +22,11 @@ function Nav() {
           Gunaso
         </NavLink>
         <ul className="nav-links">
+          <li><NavLink to="/dashboard">Dashboard</NavLink></li>
           <li><NavLink to="/submit">Submit</NavLink></li>
           <li><NavLink to="/track">Track</NavLink></li>
           <AuthenticatedTemplate>
-            <li><NavLink to="/dashboard">Dashboard</NavLink></li>
+            <li><NavLink to="/control-room">Control Room</NavLink></li>
             <li>
               <Button variant="ghost" size="sm" onClick={logout}>
                 {user?.name ?? 'Sign out'}
@@ -54,8 +56,9 @@ function AppRoutes() {
         <Route path="/track" element={<Track />} />
         <Route path="/track/:trackingId" element={<Track />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/dashboard/:id" element={<ProtectedRoute><RequestDetail /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<PublicDashboard />} />
+        <Route path="/control-room" element={<ProtectedRoute><ControlRoom /></ProtectedRoute>} />
+        <Route path="/control-room/:id" element={<ProtectedRoute><RequestDetail /></ProtectedRoute>} />
       </Routes>
       <Text
         as="footer"

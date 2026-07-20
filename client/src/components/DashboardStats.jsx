@@ -6,38 +6,10 @@
  * table's active filters.
  */
 
-// Status colors mirror the Badge variants used in the table
-// (new → primary, in_review → warning, resolved → success).
-const STATUS_META = [
-  { key: 'new', label: 'New', color: 'var(--mero-colors-primary)' },
-  { key: 'in_review', label: 'In Review', color: 'var(--mero-colors-warning)' },
-  { key: 'resolved', label: 'Resolved', color: 'var(--mero-colors-success)' },
-];
-
-const CATEGORY_META = [
-  { key: 'infrastructure', label: 'Infrastructure' },
-  { key: 'health', label: 'Health' },
-  { key: 'education', label: 'Education' },
-  { key: 'security', label: 'Security' },
-  { key: 'other', label: 'Other' },
-];
-
-const panelStyle = {
-  border: '1px solid var(--mero-colors-border)',
-  borderRadius: 'var(--mero-radii-md)',
-  background: 'var(--mero-colors-surface-raised)',
-  padding: '20px',
-};
-
-const panelTitleStyle = {
-  fontSize: 'var(--mero-typography-size-sm)',
-  fontWeight: 'var(--mero-typography-weight-medium)',
-  color: 'var(--mero-colors-text-subtle)',
-  marginBottom: '18px',
-};
+import { STATUS_META, CATEGORY_META, panelStyle, panelTitleStyle } from './chartTokens';
 
 // Donut built with a stroke-dasharray arc per segment on a single ring.
-function Donut({ segments, total }) {
+export function Donut({ segments, total }) {
   const size = 168;
   const stroke = 24;
   const r = (size - stroke) / 2;
@@ -85,7 +57,7 @@ function Donut({ segments, total }) {
   );
 }
 
-function Legend({ segments, total }) {
+export function Legend({ segments, total }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, minWidth: '140px' }}>
       {segments.map(seg => (
@@ -102,7 +74,7 @@ function Legend({ segments, total }) {
   );
 }
 
-function CategoryBars({ bars, max }) {
+export function CategoryBars({ bars, max }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {bars.map(bar => (

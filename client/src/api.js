@@ -76,6 +76,8 @@ export const api = {
     const qs = new URLSearchParams(params).toString();
     return request('GET', `/api/submissions${qs ? '?' + qs : ''}`);
   },
+  // Public endpoint — aggregate counts only, powers the public /dashboard page.
+  getStats: () => request('GET', '/api/submissions/stats'),
   getSubmission: (id) => request('GET', `/api/submissions/${id}`),
   updateSubmission: (id, body) => request('PATCH', `/api/submissions/${id}`, body),
   trackSubmission: (trackingId) => request('GET', `/api/submissions/track/${trackingId}`),

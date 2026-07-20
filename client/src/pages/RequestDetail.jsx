@@ -122,7 +122,7 @@ export default function RequestDetail() {
   if (error && !submission) return (
     <main className="page" style={{ paddingTop: '64px' }}>
       <Alert style={{ marginBottom: '16px' }}>{error}</Alert>
-      <Button as={Link} to="/dashboard" variant="secondary">← Back to dashboard</Button>
+      <Button as={Link} to="/control-room" variant="secondary">← Back to control room</Button>
     </main>
   );
   if (!submission) return null;
@@ -130,8 +130,8 @@ export default function RequestDetail() {
   return (
     <main className="page" style={{ paddingTop: '48px', paddingBottom: '80px' }}>
       <div style={{ maxWidth: '720px' }}>
-      <Link to="/dashboard" style={{ fontSize: 'var(--mero-typography-size-sm)', color: 'var(--mero-colors-text-subtle)', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '28px' }}>
-        ← Dashboard
+      <Link to="/control-room" style={{ fontSize: 'var(--mero-typography-size-sm)', color: 'var(--mero-colors-text-subtle)', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '28px' }}>
+        ← Control Room
       </Link>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '32px' }}>

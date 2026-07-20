@@ -24,7 +24,7 @@ const CATEGORY_OPTIONS = [
 const STATUS_LABELS = { new: 'New', in_review: 'In Review', resolved: 'Resolved' };
 const STATUS_VARIANTS = { new: 'primary', in_review: 'warning', resolved: 'success' };
 
-export default function Dashboard() {
+export default function ControlRoom() {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -62,7 +62,7 @@ export default function Dashboard() {
   return (
     <main className="page" style={{ paddingTop: '48px', paddingBottom: '80px' }}>
       <div style={{ marginBottom: '32px' }}>
-        <Heading level={2} style={{ marginBottom: '8px' }}>Dashboard</Heading>
+        <Heading level={2} style={{ marginBottom: '8px' }}>Control Room</Heading>
         <Text size="sm" subtle>Manage and respond to citizen submissions.</Text>
       </div>
 
@@ -120,7 +120,7 @@ export default function Dashboard() {
                   <td style={{ textTransform: 'capitalize', color: 'var(--mero-colors-text-subtle)' }}>{s.category || '—'}</td>
                   <td><Badge variant={STATUS_VARIANTS[s.status]}>{STATUS_LABELS[s.status]}</Badge></td>
                   <td style={{ color: 'var(--mero-colors-text-subtle)' }}>{new Date(s.createdAt).toLocaleDateString()}</td>
-                  <td><Link to={`/dashboard/${s.id}`} style={{ color: 'var(--mero-colors-primary)', fontSize: 'var(--mero-typography-size-sm)' }}>View →</Link></td>
+                  <td><Link to={`/control-room/${s.id}`} style={{ color: 'var(--mero-colors-primary)', fontSize: 'var(--mero-typography-size-sm)' }}>View →</Link></td>
                 </tr>
               ))}
               </tbody>

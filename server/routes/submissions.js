@@ -240,7 +240,8 @@ function createSubmissionsRouter(store = defaultStore, {
         uncategorized,
       });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      console.error('GET /api/submissions/stats failed', err);
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 

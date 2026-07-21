@@ -1,18 +1,15 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { ThemeProvider, LocaleProvider, createTheme } from '@mero-nepal/ui'
 import './index.css'
 import App from './App.jsx'
+import { DisplayProvider } from './display/DisplaySettings'
 
-// Gunaso uses the `safa` theme — Mero's crisp, Apple-inspired light design tokens.
-const theme = createTheme({ extends: 'safa' })
-
+// DisplayProvider owns the `safa` theme (Mero's crisp, Apple-inspired tokens)
+// and the locale, and lets the footer switcher change them at runtime.
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ThemeProvider theme={theme}>
-      <LocaleProvider>
-        <App />
-      </LocaleProvider>
-    </ThemeProvider>
+    <DisplayProvider>
+      <App />
+    </DisplayProvider>
   </StrictMode>,
 )

@@ -33,12 +33,17 @@ const daysSince = iso => Math.max(0, Math.floor((Date.now() - new Date(iso).getT
 // counts, these surface workload/aging signals — how much is still open, how
 // fast it's being resolved, and which gunaso has been waiting the longest.
 function AdminMetrics({ submissions }) {
-  const open = submissions.filter(s => s.status !== 'resolved');
+  const total = submissions.length;
+  const newCount = submissions.filter(s => s.status === 'new').length;
+  const inReview = submissions.filter(s => s.status === 'in_review').length;
   const resolved = submissions.filter(s => s.status === 'resolved');
-  const resolvedRate = submissions.length ? Math.round((resolved.length / submissions.length) * 100) : 0;
+  const resolvedRate = total ? Math.round((resolved.length / total) * 100) : 0;
 
-  // Oldest still-open submission by creation time.
-  const longestOpen = open.reduce(
+  // Oldest still-open (unresolved) submission by creation time. "Open" as a
+  // headline metric counts only `new`, so total = open + in review + resolved;
+  // aging still tracks everything not yet resolved.
+  const unresolved = submissions.filter(s => s.status !== 'resolved');
+  const longestOpen = unresolved.reduce(
     (oldest, s) => (!oldest || new Date(s.createdAt) < new Date(oldest.createdAt) ? s : oldest),
     null,
   );
@@ -46,22 +51,27 @@ function AdminMetrics({ submissions }) {
   return (
     <section style={{ marginBottom: '16px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-        <MetricCard label="Open" value={open.length} />
-        <MetricCard label="Resolved rate" value={`${resolvedRate}%`} />
+        <MetricCard label="Total Gunaso" value={total} />
+        <MetricCard label="Open" value={newCount} />
+        <MetricCard label="In Review" value={inReview} />
+        <MetricCard label="Resolved" value={resolved.length} />
       </div>
 
-      {longestOpen && (
-        <div style={{ ...panelStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-          <div>
-            <div style={{ ...panelTitleStyle, marginBottom: '6px' }}>Longest-running open gunaso</div>
-            <Text weight="medium">{longestOpen.title}</Text>
-            <Text size="sm" subtle style={{ marginTop: '4px' }}>
-              Open for {dayLabel(daysSince(longestOpen.createdAt))} · <Badge variant={STATUS_VARIANTS[longestOpen.status]}>{STATUS_LABELS[longestOpen.status]}</Badge>
-            </Text>
+      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'stretch' }}>
+        <MetricCard label="Resolved rate" value={`${resolvedRate}%`} style={{ flex: '1 1 180px' }} />
+        {longestOpen && (
+          <div style={{ ...panelStyle, flex: '3 1 320px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ ...panelTitleStyle, marginBottom: '6px' }}>Longest-running open gunaso</div>
+              <Text weight="medium">{longestOpen.title}</Text>
+              <Text size="sm" subtle style={{ marginTop: '4px' }}>
+                Open for {dayLabel(daysSince(longestOpen.createdAt))} · <Badge variant={STATUS_VARIANTS[longestOpen.status]}>{STATUS_LABELS[longestOpen.status]}</Badge>
+              </Text>
+            </div>
+            <Link to={`/control-room/${longestOpen.id}`} style={{ color: 'var(--mero-colors-primary)', fontSize: 'var(--mero-typography-size-sm)', whiteSpace: 'nowrap' }}>View →</Link>
           </div>
-          <Link to={`/control-room/${longestOpen.id}`} style={{ color: 'var(--mero-colors-primary)', fontSize: 'var(--mero-typography-size-sm)', whiteSpace: 'nowrap' }}>View →</Link>
-        </div>
-      )}
+        )}
+      </div>
     </section>
   );
 }

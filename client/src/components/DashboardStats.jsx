@@ -16,14 +16,17 @@ import {
   categoryChartData,
 } from './chartTokens';
 
-// A single headline metric tile, shared by both dashboards.
-export function MetricCard({ label, value }) {
+// A single headline metric tile, shared by both dashboards. The min-height and
+// centered layout give the tiles enough vertical presence to sit comfortably
+// alongside the chart panels instead of looking cramped. `style` lets a caller
+// tune sizing/flex behavior (e.g. the Control Room's resolved-rate tile).
+export function MetricCard({ label, value, style }) {
   return (
-    <div style={panelStyle}>
+    <div style={{ ...panelStyle, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '10px', minHeight: '112px', ...style }}>
       <div style={{ fontSize: '2rem', fontWeight: 'var(--mero-typography-weight-semibold)', color: 'var(--mero-colors-text)', lineHeight: 1 }}>
         {value}
       </div>
-      <div style={{ ...panelTitleStyle, marginBottom: 0, marginTop: '8px' }}>{label}</div>
+      <div style={{ ...panelTitleStyle, marginBottom: 0 }}>{label}</div>
     </div>
   );
 }

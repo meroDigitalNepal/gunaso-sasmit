@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import { AuthenticatedTemplate, UnauthenticatedTemplate } from '@azure/msal-react';
-import { Button, Text } from '@mero-nepal/ui';
+import { Button, Text, ThemeLocaleSwitcher } from '@mero-nepal/ui';
+import { useDisplaySettings } from './display/displayContext';
 import AuthProvider from './auth/AuthProvider';
 import ProtectedRoute from './components/ProtectedRoute';
 import { useAuth } from './auth/useAuth';
@@ -46,6 +47,37 @@ export function Nav() {
   );
 }
 
+function Footer() {
+  const { themes, locales, themeKey, setThemeKey, localeKey, setLocaleKey } = useDisplaySettings();
+
+  return (
+    <footer
+      style={{
+        marginTop: 'auto',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '12px',
+        flexWrap: 'wrap',
+        padding: '32px 24px',
+      }}
+    >
+      <Text as="span" subtle style={{ fontSize: '0.8125rem' }}>
+        Made by Nepaliहरु via{' '}
+        <a href="https://github.com/meroDigitalNepal" target="_blank" rel="noreferrer">meroDigitalNepal</a>
+      </Text>
+      <ThemeLocaleSwitcher
+        themes={themes}
+        locales={locales}
+        themeKey={themeKey}
+        setThemeKey={setThemeKey}
+        localeKey={localeKey}
+        setLocaleKey={setLocaleKey}
+      />
+    </footer>
+  );
+}
+
 export function AppRoutes() {
   return (
     <>
@@ -60,14 +92,7 @@ export function AppRoutes() {
         <Route path="/control-room" element={<ProtectedRoute><ControlRoom /></ProtectedRoute>} />
         <Route path="/control-room/:id" element={<ProtectedRoute><RequestDetail /></ProtectedRoute>} />
       </Routes>
-      <Text
-        as="footer"
-        subtle
-        style={{ marginTop: 'auto', textAlign: 'center', fontSize: '0.8125rem', padding: '32px 24px' }}
-      >
-        Made by Nepaliहरु via{' '}
-        <a href="https://github.com/meroDigitalNepal" target="_blank" rel="noreferrer">meroDigitalNepal</a>
-      </Text>
+      <Footer />
     </>
   );
 }

@@ -31,23 +31,26 @@ export function MetricCard({ label, value, style }) {
   );
 }
 
-// Status donut + category bars, given chart-ready data arrays.
-export function StatsPanels({ statusData, categoryData }) {
+// Status donut + category bars, given chart-ready data arrays. `t` is optional:
+// localized callers (public Dashboard) pass it to translate the panel titles +
+// series name; the untranslated Control Room omits it and gets English.
+export function StatsPanels({ statusData, categoryData, t }) {
+  const label = (key, fallback) => (t ? t(key) : fallback);
   return (
     <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '32px' }}>
       <div style={panelStyle}>
-        <div style={panelTitleStyle}>Status distribution</div>
+        <div style={panelTitleStyle}>{label('dashboard.statusDistribution', 'Status distribution')}</div>
         <PieChart donut size={220} data={statusData} />
       </div>
 
       <div style={panelStyle}>
-        <div style={panelTitleStyle}>Category distribution</div>
+        <div style={panelTitleStyle}>{label('dashboard.categoryDistribution', 'Category distribution')}</div>
         <BarChart
           data={categoryData}
           width={560}
           height={300}
           legend={false}
-          series={[{ key: 'value', name: 'Submissions', color: 'var(--mero-colors-primary)' }]}
+          series={[{ key: 'value', name: label('dashboard.seriesSubmissions', 'Submissions'), color: 'var(--mero-colors-primary)' }]}
         />
       </div>
     </section>

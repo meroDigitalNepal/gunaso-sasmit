@@ -9,17 +9,17 @@
  */
 
 import { createContext, useContext } from 'react';
-import { createTheme, en, ne } from '@mero-nepal/ui';
+import { createTheme } from '@mero-nepal/ui';
+import { LOCALES } from '../i18n';
 
 export const THEMES = {
   light: { label: 'Light', theme: createTheme({ extends: 'safa' }) },
   dark: { label: 'Dark', theme: createTheme({ extends: 'safa-dark' }) },
 };
 
-export const LOCALES = {
-  en: { label: 'English', locale: en },
-  ne: { label: 'नेपाली', locale: ne },
-};
+// English, Nepali, Newari (Nepal Bhasa), and Maithili. The locale objects (base
+// ui.* tokens + our app strings) are built in ../i18n.
+export { LOCALES };
 
 export const THEME_STORAGE_KEY = 'gunaso.theme';
 export const LOCALE_STORAGE_KEY = 'gunaso.locale';

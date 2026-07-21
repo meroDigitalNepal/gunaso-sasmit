@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Heading, Text, Button, Card, Input, Textarea, Stack } from '@mero-nepal/ui';
+import { Heading, Text, Button, Card, Input, Textarea, Stack, useLocale } from '@mero-nepal/ui';
 import Alert from '../components/Alert';
 import { api } from '../api';
 
@@ -10,6 +10,7 @@ const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_ATTACHMENT_TYPES = '.jpg,.jpeg,.png,.webp,.pdf,.doc,.docx';
 
 export default function Submit() {
+  const { t } = useLocale();
   const [form, setForm] = useState({ title: '', description: '', contactEmail: '', contactPhone: '' });
   const [attachment, setAttachment] = useState(null);
   const [attachmentError, setAttachmentError] = useState(null);
@@ -69,7 +70,7 @@ export default function Submit() {
   function handleAttachmentChange(e) {
     const file = e.target.files[0] || null;
     if (file && file.size > MAX_ATTACHMENT_BYTES) {
-      setAttachmentError('File must be 5MB or smaller.');
+      setAttachmentError(t('submit.attachment.tooLarge'));
       setAttachment(null);
       e.target.value = '';
       return;
@@ -103,8 +104,8 @@ export default function Submit() {
       <main className="page" style={{ paddingTop: '80px', paddingBottom: '80px', maxWidth: '560px' }}>
         <Card style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '16px' }}>✓</div>
-          <Heading level={3} style={{ marginBottom: '8px' }}>Gunaso submitted</Heading>
-          <Text subtle style={{ marginBottom: '24px' }}>Save your tracking ID to check on progress.</Text>
+          <Heading level={3} style={{ marginBottom: '8px' }}>{t('submit.success.heading')}</Heading>
+          <Text subtle style={{ marginBottom: '24px' }}>{t('submit.success.subheading')}</Text>
           <div style={{
             background: 'var(--mero-colors-surface)',
             border: '1px solid var(--mero-colors-border)',
@@ -112,7 +113,7 @@ export default function Submit() {
             padding: '18px 24px',
             marginBottom: '24px',
           }}>
-            <Text size="sm" subtle style={{ marginBottom: '4px' }}>Tracking ID</Text>
+            <Text size="sm" subtle style={{ marginBottom: '4px' }}>{t('submit.success.trackingId')}</Text>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
               <Text
                 as="span"
@@ -139,7 +140,7 @@ export default function Submit() {
                     whiteSpace: 'nowrap',
                     pointerEvents: 'none',
                   }}>
-                    Copied
+                    {t('submit.success.copied')}
                     <div style={{
                       position: 'absolute',
                       top: '100%',
@@ -153,7 +154,7 @@ export default function Submit() {
                 )}
                 <button
                   onClick={handleCopy}
-                  title="Copy tracking ID"
+                  title={t('submit.success.copyTitle')}
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -183,8 +184,8 @@ export default function Submit() {
             </div>
           </div>
           <Stack direction="row" gap="12px" justify="center" wrap>
-            <Button as={Link} to={`/track/${result.trackingId}`}>Track this Gunaso</Button>
-            <Button variant="secondary" onClick={() => setResult(null)}>Submit another</Button>
+            <Button as={Link} to={`/track/${result.trackingId}`}>{t('submit.success.trackThis')}</Button>
+            <Button variant="secondary" onClick={() => setResult(null)}>{t('submit.success.submitAnother')}</Button>
           </Stack>
         </Card>
       </main>
@@ -193,45 +194,45 @@ export default function Submit() {
 
   return (
     <main className="page" style={{ paddingTop: '64px', paddingBottom: '80px', maxWidth: '560px' }}>
-      <Heading level={1} style={{ marginBottom: '8px' }}>Submit a Gunaso</Heading>
-      <Text subtle style={{ marginBottom: '40px' }}>Your representative's team will review and respond to your submission.</Text>
+      <Heading level={1} style={{ marginBottom: '8px' }}>{t('submit.heading')}</Heading>
+      <Text subtle style={{ marginBottom: '40px' }}>{t('submit.subheading')}</Text>
 
       {error && <Alert style={{ marginBottom: '20px' }}>{error}</Alert>}
 
       <form onSubmit={handleSubmit}>
         <Stack gap="20px">
           <Input
-            label="Title" name="title"
-            placeholder="Brief summary of your Gunaso"
+            label={t('submit.title.label')} name="title"
+            placeholder={t('submit.title.placeholder')}
             value={form.title} onChange={handleChange} required
           />
 
           <Textarea
-            label="Description" name="description"
-            placeholder="Describe your Gunaso in detail"
+            label={t('submit.description.label')} name="description"
+            placeholder={t('submit.description.placeholder')}
             value={form.description} onChange={handleChange} required
           />
 
           <Input
-            label="Email" name="contactEmail" type="email"
-            placeholder="you@example.com"
+            label={t('submit.email.label')} name="contactEmail" type="email"
+            placeholder={t('submit.email.placeholder')}
             value={form.contactEmail} onChange={handleChange}
-            hint="We'll only use this to follow up on your Gunaso."
+            hint={t('submit.contactHint')}
           />
 
           <Input
-            label="Phone" name="contactPhone" type="tel"
+            label={t('submit.phone.label')} name="contactPhone" type="tel"
             inputMode="numeric" pattern="[0-9]*"
-            placeholder="98XXXXXXXX"
+            placeholder={t('submit.phone.placeholder')}
             value={form.contactPhone} onChange={handlePhoneChange}
-            hint="We'll only use this to follow up on your Gunaso."
+            hint={t('submit.contactHint')}
           />
 
           <Input
-            label="Attachment (optional)" name="attachment" type="file"
+            label={t('submit.attachment.label')} name="attachment" type="file"
             accept={ACCEPTED_ATTACHMENT_TYPES}
             onChange={handleAttachmentChange}
-            hint="JPG, PNG, WEBP, PDF, DOC, or DOCX — up to 5MB."
+            hint={t('submit.attachment.hint')}
           />
           {attachmentError && <Alert>{attachmentError}</Alert>}
 
@@ -243,7 +244,7 @@ export default function Submit() {
             disabled={Boolean(TURNSTILE_SITE_KEY) && !turnstileToken}
             style={{ width: '100%' }}
           >
-            {loading ? 'Submitting…' : 'Submit Gunaso'}
+            {loading ? t('submit.submitting') : t('submit.button')}
           </Button>
         </Stack>
       </form>

@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import { AuthenticatedTemplate, UnauthenticatedTemplate } from '@azure/msal-react';
-import { Button, Text, ThemeLocaleSwitcher } from '@mero-nepal/ui';
+import { Button, Text, ThemeLocaleSwitcher, useLocale } from '@mero-nepal/ui';
 import { useDisplaySettings } from './display/displayContext';
 import AuthProvider from './auth/AuthProvider';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -15,6 +15,7 @@ import Login from './pages/Login';
 
 export function Nav() {
   const { user, login, logout } = useAuth();
+  const { t } = useLocale();
 
   return (
     <nav>
@@ -23,21 +24,21 @@ export function Nav() {
           Gunaso
         </NavLink>
         <ul className="nav-links">
-          <li><NavLink to="/submit">Submit</NavLink></li>
-          <li><NavLink to="/track">Track</NavLink></li>
-          <li><NavLink to="/dashboard">Dashboard</NavLink></li>
+          <li><NavLink to="/submit">{t('nav.submit')}</NavLink></li>
+          <li><NavLink to="/track">{t('nav.track')}</NavLink></li>
+          <li><NavLink to="/dashboard">{t('nav.dashboard')}</NavLink></li>
           <AuthenticatedTemplate>
-            <li><NavLink to="/control-room">Control Room</NavLink></li>
+            <li><NavLink to="/control-room">{t('nav.controlRoom')}</NavLink></li>
             <li>
               <Button variant="ghost" size="sm" onClick={logout}>
-                {user?.name ?? 'Sign out'}
+                {user?.name ?? t('nav.signOut')}
               </Button>
             </li>
           </AuthenticatedTemplate>
           <UnauthenticatedTemplate>
             <li>
               <Button variant="ghost" size="sm" onClick={login}>
-                Admin
+                {t('nav.admin')}
               </Button>
             </li>
           </UnauthenticatedTemplate>
@@ -49,6 +50,7 @@ export function Nav() {
 
 function Footer() {
   const { themes, locales, themeKey, setThemeKey, localeKey, setLocaleKey } = useDisplaySettings();
+  const { t } = useLocale();
 
   return (
     <footer
@@ -63,7 +65,7 @@ function Footer() {
       }}
     >
       <Text as="span" subtle style={{ fontSize: '0.8125rem' }}>
-        Made by Nepaliहरु via{' '}
+        {t('footer.credit')}{' '}
         <a href="https://github.com/meroDigitalNepal" target="_blank" rel="noreferrer">meroDigitalNepal</a>
       </Text>
       <ThemeLocaleSwitcher
@@ -73,6 +75,7 @@ function Footer() {
         setThemeKey={setThemeKey}
         localeKey={localeKey}
         setLocaleKey={setLocaleKey}
+        placement="top"
       />
     </footer>
   );

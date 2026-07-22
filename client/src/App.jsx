@@ -73,6 +73,7 @@ function Footer() {
         setThemeKey={setThemeKey}
         localeKey={localeKey}
         setLocaleKey={setLocaleKey}
+        placement="top"
       />
     </footer>
   );

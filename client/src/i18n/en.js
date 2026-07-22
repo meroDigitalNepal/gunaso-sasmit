@@ -62,6 +62,8 @@ export default {
   'dashboard.categoryDistribution': 'Category distribution',
   'dashboard.seriesSubmissions': 'Submissions',
   'dashboard.uncategorized': 'Uncategorized',
+  'dashboard.weeklyStatus': 'Status activity per week',
+  'dashboard.weeklyCategory': 'Category activity per week',
 
   // Shared status + category labels (charts, and later the tables)
   'status.new': 'New',

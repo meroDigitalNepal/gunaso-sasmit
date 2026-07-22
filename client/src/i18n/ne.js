@@ -52,6 +52,8 @@ export default {
   'dashboard.categoryDistribution': 'वर्ग वितरण',
   'dashboard.seriesSubmissions': 'गुनासो',
   'dashboard.uncategorized': 'वर्गीकरण नगरिएको',
+  'dashboard.weeklyStatus': 'साप्ताहिक स्थिति गतिविधि',
+  'dashboard.weeklyCategory': 'साप्ताहिक वर्ग गतिविधि',
 
   'status.new': 'नयाँ',
   'status.in_review': 'समीक्षामा',

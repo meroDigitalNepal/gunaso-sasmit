@@ -353,6 +353,45 @@ test('GET /api/submissions/stats is not shadowed by the auth-protected /:id rout
   assert.equal(response.body.trackingId, undefined);
 });
 
+test('GET /api/submissions/stats buckets weekly activity by updated_at', async () => {
+  const now = new Date();
+  const recent = now.toISOString();
+  const longAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString();
+  const store = createMemoryStore([
+    { id: '1', trackingId: 't1', mpId: MP_ID, title: 'A', description: 'x', status: 'new', category: 'health', updatedAt: recent },
+    { id: '2', trackingId: 't2', mpId: MP_ID, title: 'B', description: 'x', status: 'resolved', category: 'education', updatedAt: recent },
+    // 60 days old — outside the 5-week window, so excluded from every bucket.
+    { id: '3', trackingId: 't3', mpId: MP_ID, title: 'C', description: 'x', status: 'new', category: 'health', updatedAt: longAgo },
+  ]);
+  const app = createApp(store, { resolveTenantMiddleware: mockTenant, submissionRateLimit: noOpRateLimit, turnstileVerifier: alwaysAllowTurnstile() });
+
+  const response = await request(app).get('/api/submissions/stats');
+
+  assert.equal(response.status, 200);
+  // Fixed window: 2 weeks before + current + 2 weeks after = 5 buckets.
+  assert.equal(response.body.weekly.length, 5);
+  // Every bucket exposes fully-zeroed status/category maps and a week start.
+  for (const week of response.body.weekly) {
+    assert.deepEqual(Object.keys(week.byStatus), ['new', 'in_review', 'resolved']);
+    assert.deepEqual(Object.keys(week.byCategory), ['infrastructure', 'health', 'education', 'security', 'other']);
+    assert.ok(week.weekStart);
+  }
+  // Only the two recent rows land in-window; the 60-day-old row is excluded.
+  const sum = (pick) => response.body.weekly.reduce((acc, w) => acc + pick(w), 0);
+  assert.equal(sum(w => w.byStatus.new), 1);
+  assert.equal(sum(w => w.byStatus.resolved), 1);
+  assert.equal(sum(w => w.byCategory.health), 1);
+  assert.equal(sum(w => w.byCategory.education), 1);
+  // Placement, not just totals: `now` falls in the center bucket (index 2 =
+  // current week), so both recent rows land there — and the two future
+  // buckets (indices 3, 4) stay empty. Guards against off-by-one bucketing.
+  assert.deepEqual(response.body.weekly[2].byStatus, { new: 1, in_review: 0, resolved: 1 });
+  assert.equal(response.body.weekly[2].byCategory.health, 1);
+  assert.equal(response.body.weekly[2].byCategory.education, 1);
+  assert.deepEqual(response.body.weekly[3].byStatus, { new: 0, in_review: 0, resolved: 0 });
+  assert.deepEqual(response.body.weekly[4].byStatus, { new: 0, in_review: 0, resolved: 0 });
+});
+
 test('GET /api/submissions/track/:trackingId hides internal-only fields', async () => {
   const store = createMemoryStore([
     {

@@ -56,6 +56,8 @@ export default {
   'dashboard.categoryDistribution': 'वर्ग वितरण',
   'dashboard.seriesSubmissions': 'गुनासो',
   'dashboard.uncategorized': 'वर्गीकरण मयागु',
+  'dashboard.weeklyStatus': 'साप्ताहिक स्थिति गतिविधि',
+  'dashboard.weeklyCategory': 'साप्ताहिक वर्ग गतिविधि',
 
   'status.new': 'न्हूगु',
   'status.in_review': 'समीक्षां',

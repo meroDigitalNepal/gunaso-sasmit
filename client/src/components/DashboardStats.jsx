@@ -6,7 +6,7 @@
  * Control Room, independent of the table's active filters.
  */
 
-import { PieChart, BarChart } from '@mero-nepal/ui';
+import { PieChart, BarChart, LineChart } from '@mero-nepal/ui';
 import {
   STATUS_META,
   CATEGORY_META,
@@ -54,6 +54,29 @@ export function StatsPanels({ statusData, categoryData, t }) {
         />
       </div>
     </section>
+  );
+}
+
+// Shared shell for a single titled chart tile on the public Dashboard. Fills
+// its grid cell so charts scale to the available width instead of a fixed
+// column. Callers place these in whatever grid they need.
+export function ChartPanel({ title, children }) {
+  return (
+    <div style={{ ...panelStyle, display: 'flex', flexDirection: 'column' }}>
+      <div style={panelTitleStyle}>{title}</div>
+      {children}
+    </div>
+  );
+}
+
+// A weekly trend line chart (one line per series) over the fixed 5-week window
+// (2 before → 2 after today, bucketed by updated_at). Future weeks render as a
+// flat zero tail rather than a gap. `title` is already localized by the caller.
+export function WeeklyTrendPanel({ title, data, series }) {
+  return (
+    <ChartPanel title={title}>
+      <LineChart data={data} series={series} width={560} height={280} legend smooth />
+    </ChartPanel>
   );
 }
 

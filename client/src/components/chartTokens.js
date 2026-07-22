@@ -57,3 +57,40 @@ export function categoryChartData(byCategory, uncategorized = 0, t) {
   }
   return data;
 }
+
+// Short x-axis label for a weekly bucket: the week-start date as "Jul 7".
+// weekStart is a UTC-midnight ISO string; format in UTC (not the viewer's
+// timezone) so the label lands on the intended Monday everywhere. Fixed
+// locale keeps it stable regardless of the app's active UI language — the
+// weekly charts are compact and a numeric month/day reads cleanly in any.
+function weekLabel(weekStart) {
+  return new Date(weekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+
+// Turn the /stats `weekly` buckets into rows a @mero-nepal/ui LineChart can
+// plot: one row per week, one numeric field per status/category key, plus a
+// `label` (the default xKey). Paired with statusSeries/categorySeries below.
+export function weeklyStatusData(weekly = []) {
+  return weekly.map(w => ({
+    label: weekLabel(w.weekStart),
+    ...Object.fromEntries(STATUS_META.map(s => [s.key, w.byStatus?.[s.key] ?? 0])),
+  }));
+}
+
+export function weeklyCategoryData(weekly = []) {
+  return weekly.map(w => ({
+    label: weekLabel(w.weekStart),
+    ...Object.fromEntries(CATEGORY_META.map(c => [c.key, w.byCategory?.[c.key] ?? 0])),
+  }));
+}
+
+// Series definitions (one line each) for the weekly charts. Status lines reuse
+// the shared status colors; category lines let the chart auto-assign from its
+// palette. `t` localizes the legend/tooltip names.
+export function statusSeries(t) {
+  return STATUS_META.map(s => ({ key: s.key, name: metaLabel(s, t), color: s.color }));
+}
+
+export function categorySeries(t) {
+  return CATEGORY_META.map(c => ({ key: c.key, name: metaLabel(c, t) }));
+}

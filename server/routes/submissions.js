@@ -13,6 +13,51 @@ const defaultBlobStorage = require('../utils/blobStorage');
 const CATEGORIES = ['infrastructure', 'health', 'education', 'security', 'other'];
 const STATUSES = ['new', 'in_review', 'resolved'];
 
+// Public dashboard weekly trend: how many ISO-week buckets to show on either
+// side of the current week. 2 → a 5-week window (2 before + current + 2 after).
+const WEEKLY_WINDOW = 2;
+
+// Monday-anchored start (UTC midnight) of the week containing `date`.
+function startOfWeekUTC(date) {
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7)); // getUTCDay: 0=Sun..6=Sat
+  return d;
+}
+
+const zeroCounts = (keys) => Object.fromEntries(keys.map((k) => [k, 0]));
+
+// Bucket submissions by the ISO week of their updated_at into a fixed window
+// centered on the current week. Every bucket in the window is emitted — weeks
+// with no activity (including the two future weeks, which can't yet contain
+// anything) come back as explicit zeroes so the client draws a continuous
+// 5-point line instead of a gap.
+function computeWeekly(submissions, now) {
+  const currentWeekStart = startOfWeekUTC(now);
+  const buckets = [];
+  for (let offset = -WEEKLY_WINDOW; offset <= WEEKLY_WINDOW; offset += 1) {
+    const start = new Date(currentWeekStart);
+    start.setUTCDate(start.getUTCDate() + offset * 7);
+    const end = new Date(start);
+    end.setUTCDate(end.getUTCDate() + 7);
+    buckets.push({ start, end, byStatus: zeroCounts(STATUSES), byCategory: zeroCounts(CATEGORIES) });
+  }
+
+  for (const s of submissions) {
+    if (!s.updatedAt) continue;
+    const when = new Date(s.updatedAt);
+    const bucket = buckets.find((b) => when >= b.start && when < b.end);
+    if (!bucket) continue;
+    if (s.status in bucket.byStatus) bucket.byStatus[s.status] += 1;
+    if (s.category && s.category in bucket.byCategory) bucket.byCategory[s.category] += 1;
+  }
+
+  return buckets.map(({ start, byStatus, byCategory }) => ({
+    weekStart: start.toISOString(),
+    byStatus,
+    byCategory,
+  }));
+}
+
 const ALLOWED_ATTACHMENT_TYPES = new Set([
   'image/jpeg',
   'image/png',
@@ -223,8 +268,8 @@ function createSubmissionsRouter(store = defaultStore, {
     try {
       const submissions = await store.getAll(req.mp.id);
 
-      const byStatus = STATUSES.reduce((acc, s) => ({ ...acc, [s]: 0 }), {});
-      const byCategory = CATEGORIES.reduce((acc, c) => ({ ...acc, [c]: 0 }), {});
+      const byStatus = zeroCounts(STATUSES);
+      const byCategory = zeroCounts(CATEGORIES);
       let uncategorized = 0;
 
       for (const s of submissions) {
@@ -238,6 +283,9 @@ function createSubmissionsRouter(store = defaultStore, {
         byStatus,
         byCategory,
         uncategorized,
+        // Weekly activity trend (bucketed by updated_at) for the public
+        // dashboard's status/category line charts.
+        weekly: computeWeekly(submissions, new Date()),
       });
     } catch (err) {
       console.error('GET /api/submissions/stats failed', err);

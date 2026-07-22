@@ -31,11 +31,31 @@ npm run dev:client   # http://localhost:5173
 ```
 
 ### Run with Docker
-Brings up Postgres, runs migrations, and starts the server:
+Brings up the whole stack — Postgres, migrations, the Express server, **and**
+the Vite client (with hot-reload) — in one command:
 ```bash
-docker compose up
+docker compose up --build
 ```
-Set `ENTRA_*` and `MP_ID` in `server/.env` (see the comments in `docker-compose.yml`).
+| Service | URL / port |
+|---------|------------|
+| Client (Vite) | http://localhost:5173 |
+| Server (Express API) | http://localhost:3001 |
+| Postgres | localhost:5432 |
+
+The client source is bind-mounted, so edits hot-reload without a rebuild. In
+dev the browser calls the API directly at `http://localhost:3001` (the server's
+published port), so no proxy is involved. Set `ENTRA_*` and `MP_ID` in
+`server/.env` (see the comments in `docker-compose.yml`).
+
+> **Already run Postgres locally on 5432?** Add a `docker-compose.override.yml`
+> to expose the container's DB on a free port instead — `!override` replaces the
+> base port list rather than appending to it:
+> ```yaml
+> services:
+>   db:
+>     ports: !override
+>       - "5433:5432"
+> ```
 
 ### Database migrations
 ```bash

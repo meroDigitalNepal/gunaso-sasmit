@@ -6,12 +6,17 @@ const getStats = vi.fn();
 vi.mock('../api', () => ({ api: { getStats: (...a) => getStats(...a) } }));
 
 const { default: PublicDashboard } = await import('./PublicDashboard');
+// PublicDashboard now reads strings via useLocale, which needs a LocaleProvider.
+// DisplayProvider supplies it (with the default 'en' locale) as main.jsx does.
+const { DisplayProvider } = await import('../display/DisplaySettings');
 
 function renderDashboard() {
   return render(
-    <MemoryRouter>
-      <PublicDashboard />
-    </MemoryRouter>,
+    <DisplayProvider>
+      <MemoryRouter>
+        <PublicDashboard />
+      </MemoryRouter>
+    </DisplayProvider>,
   );
 }
 

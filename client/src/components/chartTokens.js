@@ -6,20 +6,27 @@
  */
 
 // Status colors mirror the Badge variants used in the submissions table
-// (new → primary, in_review → warning, resolved → success).
+// (new → primary, in_review → warning, resolved → success). `token` is the i18n
+// key; `label` is the English fallback used when no `t` is passed (e.g. the
+// not-yet-localized Control Room).
 export const STATUS_META = [
-  { key: 'new', label: 'New', color: 'var(--mero-colors-primary)' },
-  { key: 'in_review', label: 'In Review', color: 'var(--mero-colors-warning)' },
-  { key: 'resolved', label: 'Resolved', color: 'var(--mero-colors-success)' },
+  { key: 'new', token: 'status.new', label: 'New', color: 'var(--mero-colors-primary)' },
+  { key: 'in_review', token: 'status.in_review', label: 'In Review', color: 'var(--mero-colors-warning)' },
+  { key: 'resolved', token: 'status.resolved', label: 'Resolved', color: 'var(--mero-colors-success)' },
 ];
 
 export const CATEGORY_META = [
-  { key: 'infrastructure', label: 'Infrastructure' },
-  { key: 'health', label: 'Health' },
-  { key: 'education', label: 'Education' },
-  { key: 'security', label: 'Security' },
-  { key: 'other', label: 'Other' },
+  { key: 'infrastructure', token: 'category.infrastructure', label: 'Infrastructure' },
+  { key: 'health', token: 'category.health', label: 'Health' },
+  { key: 'education', token: 'category.education', label: 'Education' },
+  { key: 'security', token: 'category.security', label: 'Security' },
+  { key: 'other', token: 'category.other', label: 'Other' },
 ];
+
+// Resolve a meta row's label through `t` when provided, else the English
+// fallback — lets localized callers (public Dashboard) translate while
+// untranslated ones (Control Room) keep working unchanged.
+const metaLabel = (meta, t) => (t ? t(meta.token) : meta.label);
 
 export const panelStyle = {
   border: '1px solid var(--mero-colors-border)',
@@ -39,14 +46,14 @@ export const panelTitleStyle = {
 // @mero-nepal/ui PieChart/BarChart expect. Used by both dashboards so the
 // admin (from the full submission list) and public (from /stats aggregates)
 // views render identical charts.
-export function statusChartData(byStatus) {
-  return STATUS_META.map(s => ({ label: s.label, color: s.color, value: byStatus?.[s.key] ?? 0 }));
+export function statusChartData(byStatus, t) {
+  return STATUS_META.map(s => ({ label: metaLabel(s, t), color: s.color, value: byStatus?.[s.key] ?? 0 }));
 }
 
-export function categoryChartData(byCategory, uncategorized = 0) {
-  const data = CATEGORY_META.map(c => ({ label: c.label, value: byCategory?.[c.key] ?? 0 }));
+export function categoryChartData(byCategory, uncategorized = 0, t) {
+  const data = CATEGORY_META.map(c => ({ label: metaLabel(c, t), value: byCategory?.[c.key] ?? 0 }));
   if (uncategorized > 0) {
-    data.push({ label: 'Uncategorized', value: uncategorized });
+    data.push({ label: t ? t('dashboard.uncategorized') : 'Uncategorized', value: uncategorized });
   }
   return data;
 }

@@ -42,12 +42,27 @@ vi.mock('./api', () => ({
 
 // Imported after the mocks are registered (vi.mock is hoisted above them).
 const { AppRoutes, Nav } = await import('./App');
+// DisplayProvider supplies the theme + locale context (as main.jsx does), which
+// the footer (useDisplaySettings) and every t()-using component now require.
+const { DisplayProvider } = await import('./display/DisplaySettings');
 
 function renderAt(path) {
   return render(
-    <MemoryRouter initialEntries={[path]}>
-      <AppRoutes />
-    </MemoryRouter>,
+    <DisplayProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <AppRoutes />
+      </MemoryRouter>
+    </DisplayProvider>,
+  );
+}
+
+function renderNav() {
+  return render(
+    <DisplayProvider>
+      <MemoryRouter>
+        <Nav />
+      </MemoryRouter>
+    </DisplayProvider>,
   );
 }
 
@@ -57,22 +72,14 @@ beforeEach(() => {
 
 describe('navigation', () => {
   test('order is Submit, Track, Dashboard, Admin when logged out', () => {
-    const { container } = render(
-      <MemoryRouter>
-        <Nav />
-      </MemoryRouter>,
-    );
+    const { container } = renderNav();
     const items = Array.from(container.querySelectorAll('.nav-links li')).map(li => li.textContent.trim());
     expect(items).toEqual(['Submit', 'Track', 'Dashboard', 'Admin']);
   });
 
   test('shows the Control Room link only when authenticated', () => {
     auth.isAuthenticated = true;
-    const { container } = render(
-      <MemoryRouter>
-        <Nav />
-      </MemoryRouter>,
-    );
+    const { container } = renderNav();
     const items = Array.from(container.querySelectorAll('.nav-links li')).map(li => li.textContent.trim());
     expect(items).toContain('Control Room');
     expect(items).not.toContain('Admin');

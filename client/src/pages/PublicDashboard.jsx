@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Heading, Text, Skeleton, Stack } from '@mero-nepal/ui';
+import { Heading, Text, Skeleton, Stack, useLocale } from '@mero-nepal/ui';
 import Alert from '../components/Alert';
 import { StatsPanels, MetricCard } from '../components/DashboardStats';
 import { CATEGORY_META, statusChartData, categoryChartData } from '../components/chartTokens';
@@ -8,6 +8,7 @@ import { api } from '../api';
 // Public, unauthenticated overview. Reads only aggregate counts from
 // GET /api/submissions/stats — no individual submissions or citizen data.
 export default function PublicDashboard() {
+  const { t } = useLocale();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,8 +30,8 @@ export default function PublicDashboard() {
   return (
     <main className="page" style={{ paddingTop: '48px', paddingBottom: '80px' }}>
       <div style={{ marginBottom: '32px' }}>
-        <Heading level={2} style={{ marginBottom: '8px' }}>Dashboard</Heading>
-        <Text size="sm" subtle>A public overview of citizen submissions and how they're being handled.</Text>
+        <Heading level={2} style={{ marginBottom: '8px' }}>{t('dashboard.heading')}</Heading>
+        <Text size="sm" subtle>{t('dashboard.subheading')}</Text>
       </div>
 
       {error && <Alert style={{ marginBottom: '20px' }}>{error}</Alert>}
@@ -43,15 +44,16 @@ export default function PublicDashboard() {
       ) : !error && (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-            <MetricCard label="Total submissions" value={total} />
-            <MetricCard label="Categories tracked" value={categoriesTracked} />
-            <MetricCard label="Resolved" value={resolved} />
-            <MetricCard label="Resolved rate" value={`${resolvedRate}%`} />
+            <MetricCard label={t('dashboard.metric.total')} value={total} />
+            <MetricCard label={t('dashboard.metric.categories')} value={categoriesTracked} />
+            <MetricCard label={t('dashboard.metric.resolved')} value={resolved} />
+            <MetricCard label={t('dashboard.metric.resolvedRate')} value={`${resolvedRate}%`} />
           </div>
 
           <StatsPanels
-            statusData={statusChartData(stats?.byStatus)}
-            categoryData={categoryChartData(stats?.byCategory, stats?.uncategorized ?? 0)}
+            statusData={statusChartData(stats?.byStatus, t)}
+            categoryData={categoryChartData(stats?.byCategory, stats?.uncategorized ?? 0, t)}
+            t={t}
           />
         </>
       )}
